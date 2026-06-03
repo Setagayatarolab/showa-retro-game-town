@@ -1,0 +1,965 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+  <title>猫缶仕分けパズル</title>
+  <link rel="icon" type="image/svg+xml" href="../images/favicon.svg">
+  <style>
+    * {
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      color: #fff3c7;
+      font-family: "Hiragino Maru Gothic ProN", "Yu Gothic", "Meiryo", system-ui, sans-serif;
+      background:
+        radial-gradient(circle at top, rgba(255, 218, 123, 0.25), transparent 34%),
+        linear-gradient(135deg, #7d2f24 0%, #3b2414 52%, #1a100b 100%);
+      overflow-x: hidden;
+    }
+
+    button,
+    a {
+      font: inherit;
+    }
+
+    .page {
+      width: min(1160px, calc(100% - 24px));
+      min-height: 100vh;
+      margin: 0 auto;
+      padding: 14px 0 118px;
+    }
+
+    .top {
+      display: flex;
+      align-items: end;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 12px;
+    }
+
+    .back-link {
+      display: inline-block;
+      color: #fff4c4;
+      text-decoration: none;
+      font-size: 14px;
+      font-weight: bold;
+      text-shadow: 1px 1px 0 #3b1a0a;
+    }
+
+    .back-link:hover {
+      text-decoration: underline;
+    }
+
+    h1 {
+      margin: 0;
+      color: #ffe28a;
+      text-align: right;
+      font-size: clamp(25px, 5vw, 46px);
+      letter-spacing: 0;
+      text-shadow: 3px 3px 0 #5a2b12, 0 0 14px rgba(255, 222, 128, 0.6);
+    }
+
+    .layout {
+      display: grid;
+      grid-template-columns: minmax(180px, 240px) minmax(300px, 470px) minmax(190px, 260px);
+      align-items: start;
+      justify-content: center;
+      gap: 16px;
+    }
+
+    .panel {
+      color: #32190c;
+      background: rgba(255, 239, 188, 0.92);
+      border: 4px solid #5a2b12;
+      border-radius: 10px;
+      box-shadow: 0 8px 0 rgba(42, 23, 11, 0.85), 0 16px 28px rgba(0, 0, 0, 0.28);
+      padding: 14px;
+    }
+
+    .meter {
+      display: grid;
+      gap: 6px;
+      margin-bottom: 12px;
+    }
+
+    .label {
+      color: #9d3425;
+      font-weight: 900;
+      font-size: 14px;
+    }
+
+    .value {
+      min-height: 42px;
+      display: grid;
+      place-items: center end;
+      padding: 7px 10px;
+      color: #fff4c4;
+      background: #23130b;
+      border-radius: 7px;
+      font-size: 28px;
+      font-weight: 900;
+      text-shadow: 1px 1px 0 #000;
+    }
+
+    .next-can {
+      min-height: 118px;
+      display: grid;
+      place-items: center;
+      color: #2b170d;
+      background: #fff8d8;
+      border: 2px dashed #8a4a24;
+      border-radius: 8px;
+      overflow: hidden;
+    }
+
+    .preview-grid {
+      position: relative;
+      width: 118px;
+      height: 92px;
+    }
+
+    .preview-can {
+      position: absolute;
+      width: 34px;
+      height: 30px;
+      display: grid;
+      place-items: center;
+      color: #271309;
+      border: 2px solid #2a170d;
+      border-radius: 8px;
+      box-shadow: inset 0 6px 0 rgba(255, 255, 255, 0.28), 0 3px 0 rgba(42, 23, 13, 0.45);
+      font-size: 10px;
+      font-weight: 900;
+    }
+
+    .start-button {
+      width: 100%;
+      margin-top: 12px;
+      padding: 13px 14px;
+      color: #3a1a08;
+      background: #ffcf4a;
+      border: 0;
+      border-radius: 999px;
+      box-shadow: 0 5px 0 #9a5a13;
+      font-weight: 900;
+      cursor: pointer;
+    }
+
+    .start-button:active,
+    .touch-controls button:active {
+      transform: translateY(3px);
+      box-shadow: 0 2px 0 #9a5a13;
+    }
+
+    .board-shell {
+      position: relative;
+      width: min(100%, 470px);
+      margin: 0 auto;
+      padding: 12px;
+      background:
+        linear-gradient(90deg, rgba(255, 255, 255, 0.08), transparent 26%, rgba(255, 255, 255, 0.08)),
+        #5b3018;
+      border: 7px solid #2a170d;
+      border-radius: 12px;
+      box-shadow: 0 12px 0 #1c1009, 0 24px 34px rgba(0, 0, 0, 0.36);
+    }
+
+    canvas {
+      display: block;
+      width: 100%;
+      height: auto;
+      background:
+        linear-gradient(rgba(255, 226, 138, 0.12) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 226, 138, 0.12) 1px, transparent 1px),
+        #22140d;
+      background-size: calc(100% / 8) calc(100% / 14), calc(100% / 8) calc(100% / 14), auto;
+      border-radius: 5px;
+    }
+
+    .message {
+      position: absolute;
+      inset: 12px;
+      display: none;
+      place-items: center;
+      padding: 22px;
+      color: #fff4c4;
+      text-align: center;
+      background: rgba(24, 13, 8, 0.78);
+      border-radius: 5px;
+    }
+
+    .message.is-visible {
+      display: grid;
+    }
+
+    .message h2 {
+      margin: 0 0 10px;
+      color: #ffe28a;
+      font-size: clamp(26px, 6vw, 42px);
+      text-shadow: 2px 2px 0 #5a2b12;
+    }
+
+    .message p {
+      margin: 0;
+      line-height: 1.7;
+    }
+
+    .rules h2 {
+      margin: 0 0 10px;
+      color: #9d3425;
+      font-size: 20px;
+    }
+
+    .rules p {
+      margin: 0 0 10px;
+      line-height: 1.7;
+    }
+
+    .flavors {
+      display: grid;
+      gap: 7px;
+      margin-top: 12px;
+    }
+
+    .flavor-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-weight: 800;
+    }
+
+    .swatch {
+      width: 20px;
+      height: 20px;
+      border: 2px solid #2a170d;
+      border-radius: 6px;
+    }
+
+    .touch-controls {
+      position: fixed;
+      left: 50%;
+      bottom: 10px;
+      z-index: 10;
+      width: min(640px, calc(100% - 16px));
+      transform: translateX(-50%);
+      display: none;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 8px;
+    }
+
+    .touch-controls button {
+      min-height: 56px;
+      color: #3a1a08;
+      background: #ffcf4a;
+      border: 0;
+      border-radius: 10px;
+      box-shadow: 0 5px 0 #9a5a13;
+      font-size: 16px;
+      font-weight: 900;
+      touch-action: manipulation;
+    }
+
+    @media (max-width: 900px) {
+      .top {
+        align-items: start;
+        flex-direction: column;
+      }
+
+      h1 {
+        text-align: left;
+      }
+
+      .layout {
+        grid-template-columns: minmax(0, 1fr);
+      }
+
+      .panel,
+      .board-shell {
+        width: min(470px, 100%);
+      }
+
+      .rules {
+        display: none;
+      }
+
+      .touch-controls {
+        display: grid;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .page {
+        width: min(100% - 14px, 1120px);
+        padding-top: 10px;
+      }
+
+      .panel {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+      }
+
+      .meter {
+        margin: 0;
+      }
+
+      .next-can {
+        min-height: 96px;
+      }
+
+      .start-button {
+        grid-column: 1 / -1;
+        margin-top: 0;
+      }
+
+      .board-shell {
+        padding: 9px;
+      }
+
+      .message {
+        inset: 9px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <header class="top">
+      <a class="back-link" href="../index.html">← 昭和レトロゲーム街へ戻る</a>
+      <h1>猫缶仕分けパズル</h1>
+    </header>
+
+    <section class="layout" aria-label="猫缶仕分けパズル">
+      <aside class="panel">
+        <div class="meter">
+          <span class="label">スコア</span>
+          <strong id="score" class="value">0</strong>
+        </div>
+        <div class="meter">
+          <span class="label">状態</span>
+          <strong id="status" class="value">準備中</strong>
+        </div>
+        <div class="meter">
+          <span class="label">次の猫缶セット</span>
+          <div id="nextCan" class="next-can"></div>
+        </div>
+        <button id="startBtn" class="start-button" type="button">ゲームスタート</button>
+      </aside>
+
+      <div class="board-shell">
+        <canvas id="game" width="480" height="840" aria-label="猫缶棚の盤面"></canvas>
+        <div id="message" class="message is-visible">
+          <div>
+            <h2>開店準備中</h2>
+            <p>ゲームスタートを押すと開始します。<br>猫缶セットを回転させて、同じ味を横に4つ以上そろえよう。</p>
+          </div>
+        </div>
+      </div>
+
+      <aside class="panel rules">
+        <h2>あそび方</h2>
+        <p>2〜4個の猫缶がつながった仕分けセットが棚に落ちます。</p>
+        <p>固定後は1マス1猫缶。同じ味が横に4つ以上つながると消えます。</p>
+        <p>横一列ぜんぶを埋める必要はありません。味がそろった横並びだけが消えます。</p>
+        <p>PCは←→で移動、↓で早く落下、↑またはSpaceで回転、Enterで開始です。</p>
+        <div class="flavors" aria-label="味一覧">
+          <div class="flavor-row"><span class="swatch" style="background:#e95b58"></span>まぐろ</div>
+          <div class="flavor-row"><span class="swatch" style="background:#5fa8d3"></span>かつお</div>
+          <div class="flavor-row"><span class="swatch" style="background:#f1d36b"></span>ささみ</div>
+          <div class="flavor-row"><span class="swatch" style="background:#f28c57"></span>サーモン</div>
+        </div>
+      </aside>
+    </section>
+  </main>
+
+  <nav class="touch-controls" aria-label="スマホ操作">
+    <button type="button" data-action="left">左</button>
+    <button type="button" data-action="right">右</button>
+    <button type="button" data-action="down">下</button>
+    <button type="button" data-action="rotate">回転</button>
+    <button type="button" data-action="drop">落とす</button>
+  </nav>
+
+  <script>
+    const canvas = document.getElementById("game");
+    const ctx = canvas.getContext("2d");
+    const scoreEl = document.getElementById("score");
+    const statusEl = document.getElementById("status");
+    const nextCanEl = document.getElementById("nextCan");
+    const startBtn = document.getElementById("startBtn");
+    const messageEl = document.getElementById("message");
+
+    const COLS = 8;
+    const ROWS = 14;
+    const CELL = canvas.width / COLS;
+    const NORMAL_DROP_MS = 740;
+    const FAST_DROP_MS = 90;
+
+    const flavors = [
+      { id: "maguro", label: "まぐろ", color: "#e95b58", lid: "#fff0cf" },
+      { id: "katsuo", label: "かつお", color: "#5fa8d3", lid: "#ecf8ff" },
+      { id: "sasami", label: "ささみ", color: "#f1d36b", lid: "#fff8d6" },
+      { id: "salmon", label: "サーモン", color: "#f28c57", lid: "#fff1d7" }
+    ];
+
+    const setShapes = [
+      { name: "横並び猫缶", cells: [[0, 0], [0, 1]] },
+      { name: "縦積み猫缶", cells: [[0, 0], [1, 0]] },
+      { name: "L字仕分け", cells: [[0, 0], [1, 0], [1, 1]] },
+      { name: "小山仕分け", cells: [[0, 1], [1, 0], [1, 1]] },
+      { name: "箱詰め猫缶", cells: [[0, 0], [0, 1], [1, 0], [1, 1]] },
+      { name: "階段仕分け", cells: [[0, 0], [0, 1], [1, 1], [1, 2]] }
+    ];
+
+    let board = makeBoard();
+    let current = null;
+    let nextSet = makeSet();
+    let score = 0;
+    let running = false;
+    let gameOver = false;
+    let resolving = false;
+    let clearingCells = new Set();
+    let scorePopups = [];
+    let dropTimer = 0;
+    let lastTime = 0;
+    let animationId = null;
+
+    function makeBoard() {
+      return Array.from({ length: ROWS }, () => Array(COLS).fill(null));
+    }
+
+    function randomFlavor() {
+      return flavors[Math.floor(Math.random() * flavors.length)];
+    }
+
+    function cloneCells(cells) {
+      return cells.map((cell) => ({ row: cell.row, col: cell.col, flavor: cell.flavor }));
+    }
+
+    function normalizeCells(cells) {
+      const minRow = Math.min(...cells.map((cell) => cell.row));
+      const minCol = Math.min(...cells.map((cell) => cell.col));
+      return cells.map((cell) => ({
+        row: cell.row - minRow,
+        col: cell.col - minCol,
+        flavor: cell.flavor
+      }));
+    }
+
+    function makeSet() {
+      const shape = setShapes[Math.floor(Math.random() * setShapes.length)];
+      return {
+        name: shape.name,
+        cells: shape.cells.map(([row, col]) => ({
+          row,
+          col,
+          flavor: randomFlavor()
+        }))
+      };
+    }
+
+    function pieceWidth(piece) {
+      return Math.max(...piece.cells.map((cell) => cell.col)) + 1;
+    }
+
+    function updateNextCan() {
+      nextCanEl.innerHTML = "";
+      const preview = document.createElement("div");
+      preview.className = "preview-grid";
+      const cells = normalizeCells(cloneCells(nextSet.cells));
+      const width = Math.max(...cells.map((cell) => cell.col)) + 1;
+      const height = Math.max(...cells.map((cell) => cell.row)) + 1;
+      const originX = (118 - width * 38) / 2;
+      const originY = (92 - height * 34) / 2;
+
+      for (const cell of cells) {
+        const can = document.createElement("div");
+        can.className = "preview-can";
+        can.textContent = cell.flavor.label;
+        can.style.left = `${originX + cell.col * 38}px`;
+        can.style.top = `${originY + cell.row * 34}px`;
+        can.style.background = `linear-gradient(180deg, ${cell.flavor.lid}, ${cell.flavor.color})`;
+        preview.appendChild(can);
+      }
+
+      nextCanEl.appendChild(preview);
+    }
+
+    function setStatus(text) {
+      statusEl.textContent = text;
+    }
+
+    function showMessage(title, text) {
+      messageEl.innerHTML = `<div><h2>${title}</h2><p>${text}</p></div>`;
+      messageEl.classList.add("is-visible");
+    }
+
+    function hideMessage() {
+      messageEl.classList.remove("is-visible");
+    }
+
+    function startGame() {
+      board = makeBoard();
+      current = null;
+      nextSet = makeSet();
+      score = 0;
+      running = true;
+      gameOver = false;
+      resolving = false;
+      clearingCells = new Set();
+      scorePopups = [];
+      dropTimer = 0;
+      lastTime = performance.now();
+      scoreEl.textContent = score;
+      setStatus("仕分け中");
+      startBtn.textContent = "仕切り直す";
+      updateNextCan();
+      hideMessage();
+      spawnSet();
+      cancelAnimationFrame(animationId);
+      animationId = requestAnimationFrame(loop);
+    }
+
+    function spawnSet() {
+      const cells = cloneCells(nextSet.cells);
+      current = {
+        row: 0,
+        col: Math.floor((COLS - pieceWidth({ cells })) / 2),
+        cells
+      };
+      nextSet = makeSet();
+      updateNextCan();
+
+      if (!canPlace(current, current.row, current.col, current.cells)) {
+        endGame();
+      }
+    }
+
+    function endGame() {
+      running = false;
+      gameOver = true;
+      current = null;
+      setStatus("閉店");
+      startBtn.textContent = "もう一度遊ぶ";
+      showMessage("ゲームオーバー", `スコア ${score} 点<br>棚がいっぱいになりました。<br>もう一度遊ぶを押すと再開します。`);
+      draw();
+    }
+
+    function canPlace(piece, baseRow, baseCol, cells) {
+      for (const cell of cells) {
+        const row = baseRow + cell.row;
+        const col = baseCol + cell.col;
+        if (col < 0 || col >= COLS || row < 0 || row >= ROWS) return false;
+        if (board[row][col]) return false;
+      }
+      return true;
+    }
+
+    function moveCurrent(delta) {
+      if (!running || resolving || !current) return;
+      const nextCol = current.col + delta;
+      if (canPlace(current, current.row, nextCol, current.cells)) {
+        current.col = nextCol;
+        draw();
+      }
+    }
+
+    function rotateCurrent() {
+      if (!running || resolving || !current) return;
+      const rotated = normalizeCells(current.cells.map((cell) => ({
+        row: cell.col,
+        col: -cell.row,
+        flavor: cell.flavor
+      })));
+
+      const kicks = [0, -1, 1, -2, 2];
+      for (const kick of kicks) {
+        const nextCol = current.col + kick;
+        if (canPlace(current, current.row, nextCol, rotated)) {
+          current.cells = rotated;
+          current.col = nextCol;
+          draw();
+          return;
+        }
+      }
+    }
+
+    function stepDown() {
+      if (!running || resolving || !current) return;
+      if (canPlace(current, current.row + 1, current.col, current.cells)) {
+        current.row++;
+      } else {
+        settleCurrent();
+      }
+      draw();
+    }
+
+    function hardDrop() {
+      if (!running || resolving || !current) return;
+      while (canPlace(current, current.row + 1, current.col, current.cells)) {
+        current.row++;
+      }
+      settleCurrent();
+      draw();
+    }
+
+    async function settleCurrent() {
+      if (resolving) return;
+      for (const cell of current.cells) {
+        const row = current.row + cell.row;
+        const col = current.col + cell.col;
+        board[row][col] = cell.flavor;
+      }
+      current = null;
+      resolving = true;
+      await resolveMatches();
+      resolving = false;
+      if (running) spawnSet();
+    }
+
+    async function resolveMatches() {
+      let chain = 0;
+      let matches = findMatches();
+
+      while (matches.length > 0) {
+        chain++;
+        clearingCells = new Set(matches.flatMap((match) => match.cells.map(([row, col]) => `${row},${col}`)));
+
+        for (const match of matches) {
+          const points = getClearPoints(match.cells.length, chain);
+          score += points;
+          addScorePopup(match.cells, points);
+          playClearSound(match.cells.length, chain);
+        }
+
+        scoreEl.textContent = score;
+        draw();
+        await sleep(260);
+
+        for (const key of clearingCells) {
+          const [row, col] = key.split(",").map(Number);
+          board[row][col] = null;
+        }
+
+        clearingCells = new Set();
+        collapseBoard();
+        draw();
+        await sleep(120);
+        matches = findMatches();
+      }
+    }
+
+    function getClearPoints(count, chain) {
+      let base = 40;
+      if (count === 5) base = 70;
+      if (count >= 6) base = 100 + (count - 6) * 30;
+      return Math.floor(base * (1 + (chain - 1) * 0.5));
+    }
+
+    function findMatches() {
+      const found = [];
+
+      for (let row = 0; row < ROWS; row++) {
+        let col = 0;
+        while (col < COLS) {
+          const flavor = board[row][col];
+          if (!flavor) {
+            col++;
+            continue;
+          }
+
+          const startCol = col;
+          while (col < COLS && board[row][col]?.id === flavor.id) {
+            col++;
+          }
+
+          if (col - startCol >= 4) {
+            const cells = [];
+            for (let matchCol = startCol; matchCol < col; matchCol++) {
+              cells.push([row, matchCol]);
+            }
+            found.push({ cells });
+          }
+        }
+      }
+
+      return found;
+    }
+
+    function addScorePopup(cells, points) {
+      const avgCol = cells.reduce((sum, [, col]) => sum + col, 0) / cells.length;
+      const avgRow = cells.reduce((sum, [row]) => sum + row, 0) / cells.length;
+      scorePopups.push({
+        x: avgCol * CELL + CELL / 2,
+        y: avgRow * CELL + CELL / 2,
+        text: `+${points}`,
+        alpha: 1,
+        vy: -0.42,
+        life: 780
+      });
+    }
+
+    function updateScorePopups(elapsed) {
+      for (const popup of scorePopups) {
+        popup.y += popup.vy * elapsed;
+        popup.life -= elapsed;
+        popup.alpha = Math.max(0, popup.life / 780);
+      }
+      scorePopups = scorePopups.filter((popup) => popup.life > 0);
+    }
+
+    function drawScorePopups() {
+      for (const popup of scorePopups) {
+        ctx.save();
+        ctx.globalAlpha = popup.alpha;
+        ctx.font = "bold 26px 'Yu Gothic', sans-serif";
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.shadowColor = "rgba(255, 234, 128, 0.95)";
+        ctx.shadowBlur = 12;
+        ctx.fillStyle = "#ffe98a";
+        ctx.strokeStyle = "rgba(65, 26, 8, 0.88)";
+        ctx.lineWidth = 5;
+        ctx.strokeText(popup.text, popup.x, popup.y);
+        ctx.fillText(popup.text, popup.x, popup.y);
+        ctx.restore();
+      }
+    }
+
+    function playClearSound(count, chain) {
+      try {
+        const audio = new (window.AudioContext || window.webkitAudioContext)();
+        const osc = audio.createOscillator();
+        const gain = audio.createGain();
+        const baseFreq = count >= 5 || chain >= 2 ? 760 : 520;
+
+        osc.type = "square";
+        osc.frequency.setValueAtTime(baseFreq, audio.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(baseFreq * 1.35, audio.currentTime + 0.08);
+        gain.gain.setValueAtTime(0.045, audio.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, audio.currentTime + 0.12);
+
+        osc.connect(gain);
+        gain.connect(audio.destination);
+        osc.start();
+        osc.stop(audio.currentTime + 0.13);
+      } catch (error) {
+        // 音が鳴らない環境でもゲームは続行します。
+      }
+    }
+
+    function sleep(ms) {
+      return new Promise((resolve) => setTimeout(resolve, ms));
+    }
+
+    function collapseBoard() {
+      for (let col = 0; col < COLS; col++) {
+        const stack = [];
+        for (let row = ROWS - 1; row >= 0; row--) {
+          if (board[row][col]) stack.push(board[row][col]);
+        }
+        for (let row = ROWS - 1; row >= 0; row--) {
+          board[row][col] = stack[ROWS - 1 - row] || null;
+        }
+      }
+    }
+
+    function loop(now) {
+      if (!running) {
+        draw();
+        return;
+      }
+
+      const elapsed = now - lastTime;
+      lastTime = now;
+      updateScorePopups(elapsed);
+
+      if (resolving) {
+        draw();
+        animationId = requestAnimationFrame(loop);
+        return;
+      }
+
+      dropTimer += elapsed;
+
+      if (dropTimer >= NORMAL_DROP_MS) {
+        stepDown();
+        dropTimer = 0;
+      } else {
+        draw();
+      }
+
+      animationId = requestAnimationFrame(loop);
+    }
+
+    function draw() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      drawShelf();
+
+      for (let row = 0; row < ROWS; row++) {
+        for (let col = 0; col < COLS; col++) {
+          if (board[row][col]) drawCan(col, row, board[row][col]);
+        }
+      }
+
+      if (current) drawCurrentSet();
+      drawScorePopups();
+    }
+
+    function drawShelf() {
+      ctx.fillStyle = "#22140d";
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      ctx.strokeStyle = "rgba(255, 218, 122, 0.22)";
+      ctx.lineWidth = 2;
+      for (let row = 0; row <= ROWS; row++) {
+        ctx.beginPath();
+        ctx.moveTo(0, row * CELL);
+        ctx.lineTo(canvas.width, row * CELL);
+        ctx.stroke();
+      }
+
+      ctx.strokeStyle = "rgba(106, 57, 26, 0.72)";
+      ctx.lineWidth = 5;
+      for (let col = 0; col <= COLS; col++) {
+        ctx.beginPath();
+        ctx.moveTo(col * CELL, 0);
+        ctx.lineTo(col * CELL, canvas.height);
+        ctx.stroke();
+      }
+    }
+
+    function drawCurrentSet() {
+      ctx.save();
+      ctx.strokeStyle = "rgba(255, 207, 74, 0.64)";
+      ctx.lineWidth = 8;
+      ctx.lineCap = "round";
+
+      for (const a of current.cells) {
+        for (const b of current.cells) {
+          const distance = Math.abs(a.row - b.row) + Math.abs(a.col - b.col);
+          if (distance !== 1) continue;
+          const ax = (current.col + a.col) * CELL + CELL / 2;
+          const ay = (current.row + a.row) * CELL + CELL / 2;
+          const bx = (current.col + b.col) * CELL + CELL / 2;
+          const by = (current.row + b.row) * CELL + CELL / 2;
+          ctx.beginPath();
+          ctx.moveTo(ax, ay);
+          ctx.lineTo(bx, by);
+          ctx.stroke();
+        }
+      }
+      ctx.restore();
+
+      for (const cell of current.cells) {
+        drawCan(current.col + cell.col, current.row + cell.row, cell.flavor, true);
+      }
+    }
+
+    function drawCan(col, row, flavor, active = false) {
+      const x = col * CELL + 6;
+      const y = row * CELL + 7;
+      const w = CELL - 12;
+      const h = CELL - 14;
+
+      ctx.save();
+      const isClearing = clearingCells.has(`${row},${col}`);
+      const pulse = isClearing ? 0.65 + Math.sin(performance.now() / 55) * 0.25 : 0;
+      ctx.shadowColor = "rgba(0,0,0,0.42)";
+      ctx.shadowBlur = isClearing ? 18 : active ? 12 : 5;
+      ctx.shadowOffsetY = active ? 5 : 3;
+
+      roundRect(x, y + 7, w, h - 7, 10);
+      ctx.fillStyle = flavor.color;
+      ctx.fill();
+
+      if (isClearing) {
+        ctx.fillStyle = `rgba(255, 243, 157, ${pulse})`;
+        ctx.fill();
+      }
+
+      ctx.shadowColor = "transparent";
+      roundRect(x + 2, y, w - 4, 18, 9);
+      ctx.fillStyle = flavor.lid;
+      ctx.fill();
+
+      ctx.strokeStyle = "#261309";
+      ctx.lineWidth = 2;
+      roundRect(x, y + 7, w, h - 7, 10);
+      ctx.stroke();
+
+      ctx.fillStyle = "rgba(255,255,255,0.28)";
+      roundRect(x + 6, y + 12, w - 12, 5, 3);
+      ctx.fill();
+
+      ctx.fillStyle = "#261309";
+      ctx.font = "bold 12px 'Yu Gothic', sans-serif";
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillText(flavor.label, x + w / 2, y + h / 2 + 7, w - 8);
+
+      ctx.restore();
+    }
+
+    function roundRect(x, y, w, h, r) {
+      ctx.beginPath();
+      ctx.moveTo(x + r, y);
+      ctx.lineTo(x + w - r, y);
+      ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+      ctx.lineTo(x + w, y + h - r);
+      ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+      ctx.lineTo(x + r, y + h);
+      ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+      ctx.lineTo(x, y + r);
+      ctx.quadraticCurveTo(x, y, x + r, y);
+      ctx.closePath();
+    }
+
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        startGame();
+      }
+      if (!running) return;
+      if (e.key === "ArrowLeft") {
+        e.preventDefault();
+        moveCurrent(-1);
+      }
+      if (e.key === "ArrowRight") {
+        e.preventDefault();
+        moveCurrent(1);
+      }
+      if (e.key === "ArrowDown") {
+        e.preventDefault();
+        stepDown();
+        dropTimer = Math.min(dropTimer, FAST_DROP_MS);
+      }
+      if (e.key === "ArrowUp" || e.code === "Space") {
+        e.preventDefault();
+        rotateCurrent();
+      }
+    });
+
+    document.querySelectorAll(".touch-controls button").forEach((button) => {
+      button.addEventListener("click", () => {
+        const action = button.dataset.action;
+        if (action === "left") moveCurrent(-1);
+        if (action === "right") moveCurrent(1);
+        if (action === "down") stepDown();
+        if (action === "rotate") rotateCurrent();
+        if (action === "drop") hardDrop();
+      });
+    });
+
+    startBtn.addEventListener("click", startGame);
+
+    updateNextCan();
+    draw();
+  </script>
+</body>
+</html>
