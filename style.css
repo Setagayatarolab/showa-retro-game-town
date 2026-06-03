@@ -205,15 +205,15 @@ a {
 
 @media (max-width: 768px) {
   .hero-content {
-    padding-top: 14px;
+    padding-top: 10px;
   }
 
   .ticker {
-    margin: clamp(320px, 44vh, 420px) auto 14px;
+    margin: clamp(235px, 32vh, 320px) auto 12px;
   }
 
   .game-grid {
-    margin-top: 12px;
+    margin-top: 10px;
   }
 }
 
@@ -230,12 +230,12 @@ a {
 
   .hero-content {
     width: min(100% - 22px, 1120px);
-    padding-top: 14px;
+    padding-top: 10px;
   }
 
   .ticker {
     height: 32px;
-    margin: clamp(320px, 44vh, 420px) auto 12px;
+    margin: clamp(235px, 32vh, 320px) auto 10px;
   }
 
   .game-grid {
