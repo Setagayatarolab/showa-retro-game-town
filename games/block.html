@@ -1,0 +1,578 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+  <title>昭和レトロ ブロック崩し</title>
+  <link rel="icon" type="image/svg+xml" href="../images/favicon.svg">
+  <style>
+    * {
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background:
+        radial-gradient(circle at top, #fff7d6 0%, #f3c56b 35%, #3b2414 100%);
+      font-family: "Hiragino Maru Gothic ProN", "Yu Gothic", system-ui, sans-serif;
+      color: #fff;
+      overflow: hidden;
+      touch-action: none;
+    }
+
+    .wrap {
+      width: 100vw;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 12px;
+    }
+
+    .back-link {
+      display: inline-block;
+      margin: 0 0 8px;
+      color: #fff4c4;
+      text-decoration: none;
+      font-size: 14px;
+      font-weight: bold;
+      text-shadow: 1px 1px 0 #3b1a0a;
+    }
+
+    .back-link:hover {
+      text-decoration: underline;
+    }
+
+    h1 {
+      margin: 0 0 8px;
+      font-size: clamp(22px, 5vw, 42px);
+      letter-spacing: 0.08em;
+      text-shadow: 3px 3px 0 #5a2b12, 0 0 12px rgba(255, 220, 120, 0.8);
+    }
+
+    .game-shell {
+      width: min(94vw, 760px);
+      border: 8px solid #5a2b12;
+      border-radius: 18px;
+      background: #1b120c;
+      box-shadow:
+        0 14px 0 #2a170b,
+        0 22px 35px rgba(0, 0, 0, 0.45);
+      overflow: hidden;
+      position: relative;
+    }
+
+    .hud {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 12px;
+      background: linear-gradient(90deg, #8b3f15, #c06b24, #8b3f15);
+      font-weight: bold;
+      font-size: clamp(13px, 2.6vw, 18px);
+      text-shadow: 1px 1px 0 #3b1a0a;
+    }
+
+    canvas {
+      display: block;
+      width: 100%;
+      height: auto;
+      background:
+        linear-gradient(rgba(255,255,255,0.04) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,0.04) 1px, transparent 1px),
+        linear-gradient(#20130c, #0e0906);
+      background-size: 22px 22px, 22px 22px, auto;
+    }
+
+    .panel {
+      position: absolute;
+      inset: 45px 0 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      pointer-events: none;
+    }
+
+    .message {
+      width: min(88%, 440px);
+      background: rgba(48, 24, 10, 0.92);
+      border: 4px solid #ffd36b;
+      border-radius: 16px;
+      text-align: center;
+      padding: 20px 18px;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.45);
+      pointer-events: auto;
+    }
+
+    .message h2 {
+      margin: 0 0 10px;
+      font-size: clamp(22px, 5vw, 34px);
+      color: #ffe28a;
+    }
+
+    .message p {
+      margin: 8px 0;
+      line-height: 1.7;
+      font-size: clamp(14px, 3.2vw, 17px);
+    }
+
+    button {
+      margin-top: 14px;
+      border: none;
+      border-radius: 999px;
+      padding: 12px 24px;
+      background: #ffcf4a;
+      color: #3a1a08;
+      font-weight: bold;
+      font-size: 17px;
+      cursor: pointer;
+      box-shadow: 0 5px 0 #9a5a13;
+    }
+
+    button:active {
+      transform: translateY(4px);
+      box-shadow: 0 1px 0 #9a5a13;
+    }
+
+    .help {
+      margin-top: 16px;
+      font-size: clamp(12px, 2.7vw, 15px);
+      color: #fff4c4;
+      text-align: center;
+      text-shadow: 1px 1px 0 #3b1a0a;
+    }
+
+    .hidden {
+      display: none;
+    }
+
+    @media (max-height: 620px) {
+      h1 {
+        display: none;
+      }
+
+      .help {
+        display: none;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <a class="back-link" href="../index.html">← 昭和レトロゲーム街へ戻る</a>
+    <h1>昭和レトロ ブロック崩し</h1>
+
+    <div class="game-shell" id="gameShell">
+      <div class="hud">
+        <div>点数: <span id="score">0</span></div>
+        <div>面: <span id="level">1</span></div>
+        <div>残機: <span id="lives">3</span></div>
+      </div>
+
+      <canvas id="game" width="720" height="480"></canvas>
+
+      <div class="panel" id="panel">
+        <div class="message">
+          <h2 id="messageTitle">ブロック崩し</h2>
+          <p id="messageText">
+            パドルを動かしてボールを打ち返そう。<br>
+            PCは←→キー、スマホは画面をなぞって操作。
+          </p>
+          <button id="startBtn">スタート</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="help">← → キー / マウス / タッチで操作　・　ボールを落としたら残機が減る</div>
+  </div>
+
+  <script>
+    const canvas = document.getElementById("game");
+    const ctx = canvas.getContext("2d");
+
+    const scoreEl = document.getElementById("score");
+    const levelEl = document.getElementById("level");
+    const livesEl = document.getElementById("lives");
+    const panel = document.getElementById("panel");
+    const messageTitle = document.getElementById("messageTitle");
+    const messageText = document.getElementById("messageText");
+    const startBtn = document.getElementById("startBtn");
+
+    const W = canvas.width;
+    const H = canvas.height;
+
+    let score = 0;
+    let level = 1;
+    let lives = 3;
+    let running = false;
+    let leftPressed = false;
+    let rightPressed = false;
+    let animationId = null;
+
+    const paddle = {
+      w: 110,
+      h: 16,
+      x: W / 2 - 55,
+      y: H - 42,
+      speed: 9
+    };
+
+    const ball = {
+      x: W / 2,
+      y: H - 66,
+      r: 9,
+      dx: 4,
+      dy: -4
+    };
+
+    const brick = {
+      rows: 5,
+      cols: 10,
+      w: 58,
+      h: 22,
+      padding: 8,
+      offsetTop: 48,
+      offsetLeft: 43
+    };
+
+    let bricks = [];
+
+    function makeBricks() {
+      bricks = [];
+      const colors = ["#ff5b4d", "#ff9f1c", "#ffe066", "#4ecdc4", "#5dade2"];
+
+      for (let r = 0; r < brick.rows; r++) {
+        bricks[r] = [];
+        for (let c = 0; c < brick.cols; c++) {
+          const strength = r < 1 && level >= 3 ? 2 : 1;
+          bricks[r][c] = {
+            x: brick.offsetLeft + c * (brick.w + brick.padding),
+            y: brick.offsetTop + r * (brick.h + brick.padding),
+            alive: true,
+            strength,
+            color: colors[r % colors.length]
+          };
+        }
+      }
+    }
+
+    function resetBallAndPaddle() {
+      paddle.x = W / 2 - paddle.w / 2;
+      ball.x = W / 2;
+      ball.y = H - 66;
+
+      const speed = 4 + Math.min(level - 1, 4) * 0.7;
+      ball.dx = Math.random() < 0.5 ? -speed : speed;
+      ball.dy = -speed;
+    }
+
+    function updateHud() {
+      scoreEl.textContent = score;
+      levelEl.textContent = level;
+      livesEl.textContent = lives;
+    }
+
+    function showPanel(title, text, buttonText) {
+      messageTitle.innerHTML = title;
+      messageText.innerHTML = text;
+      startBtn.textContent = buttonText;
+      panel.classList.remove("hidden");
+    }
+
+    function hidePanel() {
+      panel.classList.add("hidden");
+    }
+
+    function startGame() {
+      if (running) return;
+
+      if (lives <= 0) {
+        score = 0;
+        level = 1;
+        lives = 3;
+        makeBricks();
+      }
+
+      running = true;
+      hidePanel();
+      updateHud();
+      cancelAnimationFrame(animationId);
+      loop();
+    }
+
+    function nextLevel() {
+      running = false;
+      level++;
+      makeBricks();
+      resetBallAndPaddle();
+      updateHud();
+      showPanel(
+        "クリア！",
+        "次の面へ進もう。<br>少しずつボールが速くなるよ。",
+        "次の面へ"
+      );
+    }
+
+    function gameOver() {
+      running = false;
+      showPanel(
+        "ゲームオーバー",
+        "最終スコア：" + score + "点<br>もう一回いく？",
+        "もう一度"
+      );
+    }
+
+    function drawRoundedRect(x, y, w, h, radius) {
+      ctx.beginPath();
+      ctx.moveTo(x + radius, y);
+      ctx.lineTo(x + w - radius, y);
+      ctx.quadraticCurveTo(x + w, y, x + w, y + radius);
+      ctx.lineTo(x + w, y + h - radius);
+      ctx.quadraticCurveTo(x + w, y + h, x + w - radius, y + h);
+      ctx.lineTo(x + radius, y + h);
+      ctx.quadraticCurveTo(x, y + h, x, y + h - radius);
+      ctx.lineTo(x, y + radius);
+      ctx.quadraticCurveTo(x, y, x + radius, y);
+      ctx.closePath();
+    }
+
+    function drawBricks() {
+      for (let r = 0; r < brick.rows; r++) {
+        for (let c = 0; c < brick.cols; c++) {
+          const b = bricks[r][c];
+          if (!b.alive) continue;
+
+          ctx.save();
+          ctx.shadowColor = "rgba(0,0,0,0.35)";
+          ctx.shadowBlur = 4;
+          ctx.shadowOffsetY = 3;
+
+          drawRoundedRect(b.x, b.y, brick.w, brick.h, 6);
+          ctx.fillStyle = b.strength === 2 ? "#b37cff" : b.color;
+          ctx.fill();
+
+          ctx.fillStyle = "rgba(255,255,255,0.35)";
+          drawRoundedRect(b.x + 4, b.y + 4, brick.w - 8, 5, 3);
+          ctx.fill();
+
+          ctx.restore();
+        }
+      }
+    }
+
+    function drawPaddle() {
+      ctx.save();
+      ctx.shadowColor = "rgba(0,0,0,0.45)";
+      ctx.shadowBlur = 6;
+      ctx.shadowOffsetY = 4;
+
+      drawRoundedRect(paddle.x, paddle.y, paddle.w, paddle.h, 9);
+      ctx.fillStyle = "#ffcf4a";
+      ctx.fill();
+
+      ctx.fillStyle = "rgba(255,255,255,0.35)";
+      drawRoundedRect(paddle.x + 8, paddle.y + 4, paddle.w - 16, 4, 3);
+      ctx.fill();
+
+      ctx.restore();
+    }
+
+    function drawBall() {
+      ctx.save();
+      ctx.beginPath();
+      ctx.arc(ball.x, ball.y, ball.r, 0, Math.PI * 2);
+      ctx.fillStyle = "#ffffff";
+      ctx.shadowColor = "#fff1a8";
+      ctx.shadowBlur = 12;
+      ctx.fill();
+      ctx.closePath();
+      ctx.restore();
+    }
+
+    function drawCenterLine() {
+      ctx.save();
+      ctx.globalAlpha = 0.15;
+      ctx.strokeStyle = "#ffffff";
+      ctx.setLineDash([8, 10]);
+      ctx.beginPath();
+      ctx.moveTo(0, H - 78);
+      ctx.lineTo(W, H - 78);
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    function draw() {
+      ctx.clearRect(0, 0, W, H);
+      drawCenterLine();
+      drawBricks();
+      drawPaddle();
+      drawBall();
+    }
+
+    function movePaddle() {
+      if (leftPressed) paddle.x -= paddle.speed;
+      if (rightPressed) paddle.x += paddle.speed;
+
+      if (paddle.x < 0) paddle.x = 0;
+      if (paddle.x + paddle.w > W) paddle.x = W - paddle.w;
+    }
+
+    function collideWithWalls() {
+      if (ball.x + ball.dx > W - ball.r || ball.x + ball.dx < ball.r) {
+        ball.dx = -ball.dx;
+      }
+
+      if (ball.y + ball.dy < ball.r) {
+        ball.dy = -ball.dy;
+      }
+    }
+
+    function collideWithPaddle() {
+      const hit =
+        ball.x > paddle.x &&
+        ball.x < paddle.x + paddle.w &&
+        ball.y + ball.r > paddle.y &&
+        ball.y - ball.r < paddle.y + paddle.h &&
+        ball.dy > 0;
+
+      if (!hit) return;
+
+      const hitPoint = (ball.x - (paddle.x + paddle.w / 2)) / (paddle.w / 2);
+      const speed = Math.sqrt(ball.dx * ball.dx + ball.dy * ball.dy);
+
+      ball.dx = hitPoint * speed;
+      ball.dy = -Math.abs(speed);
+
+      ball.y = paddle.y - ball.r - 1;
+    }
+
+    function collideWithBricks() {
+      let remaining = 0;
+
+      for (let r = 0; r < brick.rows; r++) {
+        for (let c = 0; c < brick.cols; c++) {
+          const b = bricks[r][c];
+          if (!b.alive) continue;
+
+          remaining++;
+
+          const hit =
+            ball.x > b.x &&
+            ball.x < b.x + brick.w &&
+            ball.y > b.y &&
+            ball.y < b.y + brick.h;
+
+          if (!hit) continue;
+
+          ball.dy = -ball.dy;
+          b.strength--;
+
+          if (b.strength <= 0) {
+            b.alive = false;
+            score += 10;
+          } else {
+            score += 3;
+          }
+
+          updateHud();
+          return;
+        }
+      }
+
+      if (remaining === 0) {
+        nextLevel();
+      }
+    }
+
+    function checkMiss() {
+      if (ball.y - ball.r <= H) return;
+
+      lives--;
+      updateHud();
+
+      if (lives <= 0) {
+        gameOver();
+        return;
+      }
+
+      running = false;
+      resetBallAndPaddle();
+      showPanel(
+        "ミス！",
+        "残機はあと " + lives + "。<br>落ち着いて打ち返そう。",
+        "再開"
+      );
+    }
+
+    function update() {
+      movePaddle();
+      collideWithWalls();
+      collideWithPaddle();
+      collideWithBricks();
+
+      ball.x += ball.dx;
+      ball.y += ball.dy;
+
+      checkMiss();
+    }
+
+    function loop() {
+      if (!running) {
+        draw();
+        return;
+      }
+
+      update();
+      draw();
+      animationId = requestAnimationFrame(loop);
+    }
+
+    function setPaddleByClientX(clientX) {
+      const rect = canvas.getBoundingClientRect();
+      const scale = W / rect.width;
+      const x = (clientX - rect.left) * scale;
+      paddle.x = x - paddle.w / 2;
+
+      if (paddle.x < 0) paddle.x = 0;
+      if (paddle.x + paddle.w > W) paddle.x = W - paddle.w;
+    }
+
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "ArrowLeft") leftPressed = true;
+      if (e.key === "ArrowRight") rightPressed = true;
+      if (e.key === " " || e.key === "Enter") startGame();
+    });
+
+    document.addEventListener("keyup", (e) => {
+      if (e.key === "ArrowLeft") leftPressed = false;
+      if (e.key === "ArrowRight") rightPressed = false;
+    });
+
+    canvas.addEventListener("mousemove", (e) => {
+      setPaddleByClientX(e.clientX);
+    });
+
+    canvas.addEventListener("touchstart", (e) => {
+      e.preventDefault();
+      if (!running) startGame();
+      setPaddleByClientX(e.touches[0].clientX);
+    }, { passive: false });
+
+    canvas.addEventListener("touchmove", (e) => {
+      e.preventDefault();
+      setPaddleByClientX(e.touches[0].clientX);
+    }, { passive: false });
+
+    startBtn.addEventListener("click", startGame);
+
+    makeBricks();
+    resetBallAndPaddle();
+    updateHud();
+    draw();
+  </script>
+</body>
+</html>

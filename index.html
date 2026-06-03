@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>昭和レトロゲーム街</title>
+    <link rel="icon" type="image/svg+xml" href="images/favicon.svg">
+    <link rel="stylesheet" href="style.css">
+  </head>
+  <body>
+    <main class="hero town-hero">
+      <div class="shade"></div>
+
+      <section class="hero-content" aria-label="昭和レトロゲーム街">
+        <p class="street-label">駄菓子屋横丁・一番地</p>
+        <div class="ticker" aria-label="案内表示">
+          <p class="ticker-track">夕焼け横丁のミニゲームへようこそ。</p>
+        </div>
+
+        <div class="game-grid" aria-label="ゲーム一覧">
+          <a class="game-card playable" href="games/catcan.html">
+            <p class="shop-tag">魚屋ゲーム堂</p>
+            <h2>猫缶仕分けパズル</h2>
+            <p>落ちてくる猫缶を並べてそろえる、レトロな猫缶パズル。</p>
+            <span class="play-button">遊ぶ</span>
+          </a>
+
+          <a class="game-card playable" href="games/defense.html">
+            <p class="shop-tag">電器店前</p>
+            <h2>ピコピコ防衛隊</h2>
+            <p>ブラウン管の気分で遊ぶ、昭和風の固定画面シューティング。</p>
+            <span class="play-button">遊ぶ</span>
+          </a>
+
+          <a class="game-card playable" href="games/block.html">
+            <p class="shop-tag">純喫茶</p>
+            <h2>喫茶店ブロック崩し</h2>
+            <p>喫茶店の奥でこっそり遊ぶ、懐かしのブロック崩し。</p>
+            <span class="play-button">遊ぶ</span>
+          </a>
+
+          <a class="game-card playable" href="games/othello.html">
+            <p class="shop-tag">将棋盤横丁</p>
+            <h2>オセロ横丁</h2>
+            <p>じっくり考えてひっくり返す、商店街の定番ボードゲーム。</p>
+            <span class="play-button">遊ぶ</span>
+          </a>
+
+          <article class="game-card locked" aria-disabled="true">
+            <p class="shop-tag">横断歩道</p>
+            <h2>商店街横断チャレンジ</h2>
+            <p>自転車や人波をよけながら、夕焼けの横丁を渡り切れ。</p>
+            <span class="play-button disabled">準備中</span>
+          </article>
+
+          <article class="game-card locked" aria-disabled="true">
+            <p class="shop-tag">駄菓子屋</p>
+            <h2>駄菓子屋メンコ合わせ</h2>
+            <p>駄菓子屋のメンコをめくってそろえる、記憶力ゲーム。</p>
+            <span class="play-button disabled">準備中</span>
+          </article>
+
+          <article class="game-card locked" aria-disabled="true">
+            <p class="shop-tag">ラムネ売り場</p>
+            <h2>ラムネ瓶キャッチャー</h2>
+            <p>落ちてくるラムネやお菓子をうまく受け止めよう。</p>
+            <span class="play-button disabled">準備中</span>
+          </article>
+
+          <article class="game-card locked" aria-disabled="true">
+            <p class="shop-tag">路地裏ゲーム台</p>
+            <h2>ピコピコもぐら横丁</h2>
+            <p>ひょこっと出てくるやつを叩く、反射神経ゲーム。</p>
+            <span class="play-button disabled">準備中</span>
+          </article>
+        </div>
+      </section>
+    </main>
+
+    <script src="script.js"></script>
+  </body>
+</html>

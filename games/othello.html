@@ -1,0 +1,606 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>オセロゲーム</title>
+  <link rel="icon" type="image/svg+xml" href="../images/favicon.svg">
+  <style>
+    body {
+      font-family: sans-serif;
+      text-align: center;
+      background: #f2f2f2;
+      margin: 0;
+      padding: 20px;
+    }
+
+    .back-link {
+      display: inline-block;
+      margin: 0 0 12px;
+      color: #5a2b12;
+      text-decoration: none;
+      font-size: 14px;
+      font-weight: bold;
+    }
+
+    .back-link:hover {
+      text-decoration: underline;
+    }
+
+    h1 {
+      margin-bottom: 10px;
+    }
+
+    #settings {
+      background: white;
+      display: inline-block;
+      padding: 15px 25px;
+      border-radius: 12px;
+      margin-bottom: 15px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+    }
+
+    .setting-block {
+      margin: 10px 0;
+    }
+
+    button,
+    select {
+      font-size: 16px;
+      padding: 8px 14px;
+      margin: 5px;
+      cursor: pointer;
+    }
+
+    #info {
+      font-size: 20px;
+      font-weight: bold;
+      margin: 15px;
+    }
+
+    #score {
+      font-size: 18px;
+      margin-bottom: 10px;
+    }
+
+    #board {
+      display: grid;
+      grid-template-columns: repeat(8, 56px);
+      grid-template-rows: repeat(8, 56px);
+      gap: 2px;
+      justify-content: center;
+      margin: 20px auto;
+    }
+
+    .cell {
+      width: 56px;
+      height: 56px;
+      background: #008000;
+      border: 1px solid #004d00;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+    }
+
+    .cell:hover {
+      background: #0a9a0a;
+    }
+
+    .hint {
+      background: #25a525;
+    }
+
+    .hint::after {
+      content: "";
+      width: 12px;
+      height: 12px;
+      background: rgba(255,255,255,0.55);
+      border-radius: 50%;
+    }
+
+    .stone {
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+    }
+
+    .black {
+      background: #111;
+    }
+
+    .white {
+      background: #fff;
+      border: 1px solid #ccc;
+    }
+
+    @media (max-width: 520px) {
+      #board {
+        grid-template-columns: repeat(8, 40px);
+        grid-template-rows: repeat(8, 40px);
+      }
+
+      .cell {
+        width: 40px;
+        height: 40px;
+      }
+
+      .stone {
+        width: 31px;
+        height: 31px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <a class="back-link" href="../index.html">← 昭和レトロゲーム街へ戻る</a>
+  <h1>オセロゲーム</h1>
+
+  <div id="settings">
+    <div class="setting-block">
+      <strong>対戦モード</strong><br>
+      <select id="modeSelect">
+        <option value="two">二人で対戦</option>
+        <option value="cpu">コンピュータと対戦</option>
+      </select>
+    </div>
+
+    <div class="setting-block">
+      <strong>CPUレベル</strong><br>
+      <select id="levelSelect">
+        <option value="beginner">初心者</option>
+        <option value="middle">中級</option>
+        <option value="advanced">上級</option>
+      </select>
+    </div>
+
+    <div class="setting-block">
+      <strong>自分の色</strong><br>
+      <select id="colorSelect">
+        <option value="black">黒で先攻</option>
+        <option value="white">白で後攻</option>
+      </select>
+    </div>
+
+    <button onclick="startGame()">ゲーム開始</button>
+    <button onclick="resetGame()">最初から</button>
+  </div>
+
+  <div id="info">設定を選んでゲーム開始を押してください</div>
+  <div id="score">黒: 2　白: 2</div>
+  <div id="board"></div>
+
+  <script>
+    const EMPTY = 0;
+    const BLACK = 1;
+    const WHITE = 2;
+
+    let board = [];
+    let currentPlayer = BLACK;
+    let gameMode = "two";
+    let cpuLevel = "beginner";
+    let humanColor = BLACK;
+    let cpuColor = WHITE;
+    let gameStarted = false;
+    let gameOver = false;
+
+    const directions = [
+      [-1, -1], [-1, 0], [-1, 1],
+      [0, -1],           [0, 1],
+      [1, -1],  [1, 0],  [1, 1]
+    ];
+
+    const boardScore = [
+      [120, -20, 20, 5, 5, 20, -20, 120],
+      [-20, -40, -5, -5, -5, -5, -40, -20],
+      [20, -5, 15, 3, 3, 15, -5, 20],
+      [5, -5, 3, 3, 3, 3, -5, 5],
+      [5, -5, 3, 3, 3, 3, -5, 5],
+      [20, -5, 15, 3, 3, 15, -5, 20],
+      [-20, -40, -5, -5, -5, -5, -40, -20],
+      [120, -20, 20, 5, 5, 20, -20, 120]
+    ];
+
+    function startGame() {
+      gameMode = document.getElementById("modeSelect").value;
+      cpuLevel = document.getElementById("levelSelect").value;
+
+      const selectedColor = document.getElementById("colorSelect").value;
+
+      if (selectedColor === "black") {
+        humanColor = BLACK;
+        cpuColor = WHITE;
+      } else {
+        humanColor = WHITE;
+        cpuColor = BLACK;
+      }
+
+      gameStarted = true;
+      setupBoard();
+
+      if (gameMode === "cpu" && currentPlayer === cpuColor) {
+        drawBoard();
+        updateInfo();
+        setTimeout(cpuMove, 700);
+      }
+    }
+
+    function resetGame() {
+      if (!gameStarted) {
+        setupBoard();
+        document.getElementById("info").textContent =
+          "設定を選んでゲーム開始を押してください";
+        return;
+      }
+
+      setupBoard();
+
+      if (gameMode === "cpu" && currentPlayer === cpuColor) {
+        drawBoard();
+        updateInfo();
+        setTimeout(cpuMove, 700);
+      }
+    }
+
+    function setupBoard() {
+      board = [];
+      gameOver = false;
+      currentPlayer = BLACK;
+
+      for (let row = 0; row < 8; row++) {
+        board[row] = [];
+        for (let col = 0; col < 8; col++) {
+          board[row][col] = EMPTY;
+        }
+      }
+
+      board[3][3] = WHITE;
+      board[3][4] = BLACK;
+      board[4][3] = BLACK;
+      board[4][4] = WHITE;
+
+      drawBoard();
+      updateInfo();
+    }
+
+    function drawBoard() {
+      const boardElement = document.getElementById("board");
+      boardElement.innerHTML = "";
+
+      for (let row = 0; row < 8; row++) {
+        for (let col = 0; col < 8; col++) {
+          const cell = document.createElement("div");
+          cell.className = "cell";
+
+          cell.onclick = function () {
+            placeStone(row, col);
+          };
+
+          if (board[row][col] === BLACK) {
+            const stone = document.createElement("div");
+            stone.className = "stone black";
+            cell.appendChild(stone);
+          } else if (board[row][col] === WHITE) {
+            const stone = document.createElement("div");
+            stone.className = "stone white";
+            cell.appendChild(stone);
+          } else if (shouldShowHint(row, col)) {
+            cell.classList.add("hint");
+          }
+
+          boardElement.appendChild(cell);
+        }
+      }
+    }
+
+    function shouldShowHint(row, col) {
+      if (!gameStarted || gameOver) return false;
+
+      if (gameMode === "two") {
+        return getFlippableStones(row, col, currentPlayer).length > 0;
+      }
+
+      if (gameMode === "cpu" && currentPlayer === humanColor) {
+        return getFlippableStones(row, col, humanColor).length > 0;
+      }
+
+      return false;
+    }
+
+    function placeStone(row, col) {
+      if (!gameStarted || gameOver) return;
+
+      if (gameMode === "cpu" && currentPlayer === cpuColor) {
+        return;
+      }
+
+      if (board[row][col] !== EMPTY) return;
+
+      const flippableStones = getFlippableStones(row, col, currentPlayer);
+
+      if (flippableStones.length === 0) return;
+
+      board[row][col] = currentPlayer;
+
+      for (const stone of flippableStones) {
+        board[stone.row][stone.col] = currentPlayer;
+      }
+
+      nextTurn();
+    }
+
+    function nextTurn() {
+      currentPlayer = currentPlayer === BLACK ? WHITE : BLACK;
+
+      if (!hasValidMove(currentPlayer)) {
+        currentPlayer = currentPlayer === BLACK ? WHITE : BLACK;
+
+        if (!hasValidMove(currentPlayer)) {
+          endGame();
+          return;
+        } else {
+          alert("置ける場所がないのでパスします");
+        }
+      }
+
+      drawBoard();
+      updateInfo();
+
+      if (gameMode === "cpu" && currentPlayer === cpuColor && !gameOver) {
+        setTimeout(cpuMove, 700);
+      }
+    }
+
+    function cpuMove() {
+      if (gameOver) return;
+
+      const validMoves = getValidMoves(cpuColor);
+
+      if (validMoves.length === 0) {
+        nextTurn();
+        return;
+      }
+
+      let selectedMove;
+
+      if (cpuLevel === "beginner") {
+        selectedMove = getBeginnerMove(validMoves);
+      } else if (cpuLevel === "middle") {
+        selectedMove = getMiddleMove(validMoves);
+      } else {
+        selectedMove = getAdvancedMove(validMoves);
+      }
+
+      const flippableStones =
+        getFlippableStones(selectedMove.row, selectedMove.col, cpuColor);
+
+      board[selectedMove.row][selectedMove.col] = cpuColor;
+
+      for (const stone of flippableStones) {
+        board[stone.row][stone.col] = cpuColor;
+      }
+
+      nextTurn();
+    }
+
+    function getBeginnerMove(validMoves) {
+      const randomIndex = Math.floor(Math.random() * validMoves.length);
+      return validMoves[randomIndex];
+    }
+
+    function getMiddleMove(validMoves) {
+      let bestMove = validMoves[0];
+
+      for (const move of validMoves) {
+        if (move.count > bestMove.count) {
+          bestMove = move;
+        }
+      }
+
+      return bestMove;
+    }
+
+    function getAdvancedMove(validMoves) {
+      let bestMove = validMoves[0];
+      let bestScore = -99999;
+
+      for (const move of validMoves) {
+        let score = 0;
+
+        score += boardScore[move.row][move.col];
+        score += move.count * 8;
+
+        if (isCorner(move.row, move.col)) {
+          score += 100;
+        }
+
+        if (isDangerNearCorner(move.row, move.col)) {
+          score -= 80;
+        }
+
+        if (score > bestScore) {
+          bestScore = score;
+          bestMove = move;
+        }
+      }
+
+      return bestMove;
+    }
+
+    function isCorner(row, col) {
+      return (
+        (row === 0 && col === 0) ||
+        (row === 0 && col === 7) ||
+        (row === 7 && col === 0) ||
+        (row === 7 && col === 7)
+      );
+    }
+
+    function isDangerNearCorner(row, col) {
+      const dangerousCells = [
+        [0, 1], [1, 0], [1, 1],
+        [0, 6], [1, 6], [1, 7],
+        [6, 0], [6, 1], [7, 1],
+        [6, 6], [6, 7], [7, 6]
+      ];
+
+      for (const cell of dangerousCells) {
+        if (row === cell[0] && col === cell[1]) {
+          return true;
+        }
+      }
+
+      return false;
+    }
+
+    function getValidMoves(player) {
+      const moves = [];
+
+      for (let row = 0; row < 8; row++) {
+        for (let col = 0; col < 8; col++) {
+          const flippable = getFlippableStones(row, col, player);
+
+          if (flippable.length > 0) {
+            moves.push({
+              row: row,
+              col: col,
+              count: flippable.length
+            });
+          }
+        }
+      }
+
+      return moves;
+    }
+
+    function getFlippableStones(row, col, player) {
+      if (board[row][col] !== EMPTY) {
+        return [];
+      }
+
+      const opponent = player === BLACK ? WHITE : BLACK;
+      let result = [];
+
+      for (const direction of directions) {
+        const rowMove = direction[0];
+        const colMove = direction[1];
+
+        let nextRow = row + rowMove;
+        let nextCol = col + colMove;
+        let stonesInThisDirection = [];
+
+        while (
+          isInsideBoard(nextRow, nextCol) &&
+          board[nextRow][nextCol] === opponent
+        ) {
+          stonesInThisDirection.push({
+            row: nextRow,
+            col: nextCol
+          });
+
+          nextRow += rowMove;
+          nextCol += colMove;
+        }
+
+        if (
+          stonesInThisDirection.length > 0 &&
+          isInsideBoard(nextRow, nextCol) &&
+          board[nextRow][nextCol] === player
+        ) {
+          result = result.concat(stonesInThisDirection);
+        }
+      }
+
+      return result;
+    }
+
+    function hasValidMove(player) {
+      return getValidMoves(player).length > 0;
+    }
+
+    function isInsideBoard(row, col) {
+      return row >= 0 && row < 8 && col >= 0 && col < 8;
+    }
+
+    function updateInfo() {
+      const counts = countStones();
+
+      document.getElementById("score").textContent =
+        "黒: " + counts.black + "　白: " + counts.white;
+
+      if (!gameStarted) {
+        return;
+      }
+
+      if (gameOver) {
+        return;
+      }
+
+      if (gameMode === "two") {
+        document.getElementById("info").textContent =
+          currentPlayer === BLACK ? "黒の番です" : "白の番です";
+      } else {
+        if (currentPlayer === humanColor) {
+          document.getElementById("info").textContent =
+            humanColor === BLACK
+              ? "あなたの番です（黒）"
+              : "あなたの番です（白）";
+        } else {
+          document.getElementById("info").textContent =
+            cpuColor === BLACK
+              ? "コンピュータの番です（黒）"
+              : "コンピュータの番です（白）";
+        }
+      }
+    }
+
+    function countStones() {
+      let black = 0;
+      let white = 0;
+
+      for (let row = 0; row < 8; row++) {
+        for (let col = 0; col < 8; col++) {
+          if (board[row][col] === BLACK) black++;
+          if (board[row][col] === WHITE) white++;
+        }
+      }
+
+      return {
+        black: black,
+        white: white
+      };
+    }
+
+    function endGame() {
+      gameOver = true;
+      drawBoard();
+
+      const counts = countStones();
+
+      let resultText = "ゲーム終了　";
+
+      if (counts.black > counts.white) {
+        resultText += "黒の勝ち！";
+      } else if (counts.white > counts.black) {
+        resultText += "白の勝ち！";
+      } else {
+        resultText += "引き分け！";
+      }
+
+      document.getElementById("info").textContent = resultText;
+      document.getElementById("score").textContent =
+        "黒: " + counts.black + "　白: " + counts.white;
+
+      alert(
+        "ゲーム終了！\n" +
+        "黒: " + counts.black + "\n" +
+        "白: " + counts.white + "\n\n" +
+        resultText
+      );
+    }
+
+    setupBoard();
+  </script>
+
+</body>
+</html>

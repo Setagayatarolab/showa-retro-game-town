@@ -1,0 +1,226 @@
+:root {
+  --ink: #2d1a12;
+  --paper: #fff1c7;
+  --red: #c83c2d;
+  --gold: #f4c354;
+  --green: #2f7a5a;
+  --blue: #285f86;
+  --shadow: rgba(23, 11, 4, 0.45);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  min-height: 100%;
+}
+
+body {
+  min-height: 100%;
+  margin: 0;
+  color: var(--paper);
+  font-family: "Hiragino Maru Gothic ProN", "Yu Gothic", "Meiryo", system-ui, sans-serif;
+  background: #24160e;
+}
+
+a {
+  color: inherit;
+}
+
+.hero {
+  position: relative;
+  min-height: 100svh;
+  overflow: hidden;
+  background-image: url("images/showa-retro-game-town.png");
+  background-size: cover;
+  background-position: center center;
+  background-repeat: no-repeat;
+}
+
+.shade {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.48);
+  z-index: 0;
+}
+
+.hero-content {
+  position: relative;
+  z-index: 2;
+  width: min(1120px, calc(100% - 32px));
+  min-height: 100svh;
+  margin: 0 auto;
+  padding: clamp(18px, 4vw, 34px) 0 42px;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+}
+
+.street-label {
+  width: fit-content;
+  margin: 0 auto;
+  padding: 6px 14px;
+  color: #ffe8a1;
+  background: rgba(42, 25, 14, 0.78);
+  border: 2px solid rgba(255, 216, 110, 0.78);
+  border-radius: 999px;
+  font-size: clamp(0.8rem, 2.5vw, 1rem);
+  letter-spacing: 0;
+}
+
+.ticker {
+  width: min(920px, 100%);
+  height: 38px;
+  margin: clamp(28vh, 32vh, 330px) auto 18px;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  color: #fff0b8;
+  background: rgba(28, 16, 10, 0.72);
+  border-top: 1px solid rgba(255, 224, 130, 0.42);
+  border-bottom: 1px solid rgba(255, 224, 130, 0.34);
+  box-shadow: 0 5px 18px rgba(0, 0, 0, 0.24);
+}
+
+.ticker-track {
+  min-width: 100%;
+  margin: 0;
+  white-space: nowrap;
+  font-weight: 800;
+  font-size: clamp(0.95rem, 2.2vw, 1.08rem);
+  letter-spacing: 0;
+  text-shadow: 0 0 8px rgba(255, 229, 142, 0.34);
+  animation: ticker-slide 18s linear infinite;
+}
+
+.ticker:hover .ticker-track {
+  animation-play-state: paused;
+}
+
+@keyframes ticker-slide {
+  from {
+    transform: translateX(100%);
+  }
+
+  to {
+    transform: translateX(-100%);
+  }
+}
+
+.game-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.game-card {
+  min-height: 244px;
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  color: #fff4c8;
+  text-decoration: none;
+  background: rgba(255, 248, 225, 0.24);
+  border: 3px solid rgba(75, 42, 24, 0.82);
+  border-radius: 8px;
+  box-shadow:
+    0 7px 0 rgba(63, 31, 14, 0.5),
+    0 15px 24px rgba(0, 0, 0, 0.22);
+  text-shadow: 0 2px 5px rgba(0, 0, 0, 0.78);
+}
+
+.game-card.locked {
+  cursor: default;
+}
+
+.game-card h2 {
+  margin: 6px 0 10px;
+  color: #ffe28a;
+  font-size: 1.35rem;
+  line-height: 1.25;
+  letter-spacing: 0;
+}
+
+.game-card p {
+  margin: 0;
+  line-height: 1.65;
+}
+
+.shop-tag {
+  color: #c9f0c8;
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.card-link,
+.play-button,
+.badge {
+  width: fit-content;
+  margin-top: auto;
+  padding: 9px 16px;
+  color: #fff6c8;
+  text-decoration: none;
+  font-weight: 700;
+  background: var(--blue);
+  border: 2px solid #2a1c12;
+  border-radius: 6px;
+  box-shadow: 0 4px 0 #2a1c12;
+}
+
+.card-link:hover,
+.card-link:focus-visible,
+.game-card:hover .play-button,
+.game-card:focus-visible .play-button {
+  transform: translateY(2px);
+  box-shadow: 0 2px 0 #2a1c12;
+}
+
+.badge {
+  color: #f9e9bb;
+  background: #66594b;
+}
+
+.play-button.disabled {
+  color: #f9e9bb;
+  background: rgba(85, 74, 62, 0.92);
+  box-shadow: 0 4px 0 #2a1c12;
+}
+
+.game-card.locked:hover .play-button.disabled,
+.game-card.locked:focus-visible .play-button.disabled {
+  transform: none;
+  box-shadow: 0 4px 0 #2a1c12;
+}
+
+@media (max-width: 900px) {
+  .hero-content {
+    justify-content: flex-start;
+  }
+
+  .game-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 560px) {
+  .hero-content {
+    width: min(100% - 22px, 1120px);
+    padding-top: 22px;
+  }
+
+  .ticker {
+    height: 34px;
+    margin: 24vh auto 14px;
+  }
+
+  .game-grid {
+    grid-template-columns: 1fr;
+    gap: 13px;
+  }
+
+  .game-card {
+    min-height: 190px;
+  }
+
+}
