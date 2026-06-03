@@ -203,6 +203,20 @@ a {
   }
 }
 
+@media (max-width: 768px) {
+  .hero-content {
+    padding-top: 14px;
+  }
+
+  .ticker {
+    margin: clamp(320px, 44vh, 420px) auto 14px;
+  }
+
+  .game-grid {
+    margin-top: 12px;
+  }
+}
+
 @media (max-width: 560px) {
   .hero {
     background-image: url("images/showa-retro-game-town-mobile.png");
@@ -221,12 +235,13 @@ a {
 
   .ticker {
     height: 32px;
-    margin: 22vh auto 10px;
+    margin: clamp(320px, 44vh, 420px) auto 12px;
   }
 
   .game-grid {
     grid-template-columns: 1fr;
     gap: 10px;
+    margin-top: 10px;
   }
 
   .game-card {
