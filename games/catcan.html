@@ -117,6 +117,22 @@
       overflow: hidden;
     }
 
+    .rule-select {
+      width: 100%;
+      padding: 9px 10px;
+      color: #2b170d;
+      background: #fff8d8;
+      border: 2px solid #8a4a24;
+      border-radius: 8px;
+      font-weight: 900;
+    }
+
+    .rule-value {
+      place-items: center;
+      text-align: center;
+      font-size: 18px;
+    }
+
     .preview-grid {
       position: relative;
       width: 118px;
@@ -345,6 +361,17 @@
           <strong id="status" class="value">準備中</strong>
         </div>
         <div class="meter">
+          <label class="label" for="matchCountSelect">消える数</label>
+          <select id="matchCountSelect" class="rule-select">
+            <option value="3">3つ以上で消える</option>
+            <option value="4" selected>4つ以上で消える</option>
+          </select>
+        </div>
+        <div class="meter">
+          <span class="label">ルール</span>
+          <strong id="ruleValue" class="value rule-value">縦横 4つ以上</strong>
+        </div>
+        <div class="meter">
           <span class="label">次の猫缶セット</span>
           <div id="nextCan" class="next-can"></div>
         </div>
@@ -356,16 +383,17 @@
         <div id="message" class="message is-visible">
           <div>
             <h2>開店準備中</h2>
-            <p>ゲームスタートを押すと開始します。<br>猫缶セットを回転させて、同じ味を横に4つ以上そろえよう。</p>
+            <p>ゲームスタートを押すと開始します。<br>猫缶セットを回転させて、同じ味を縦か横に4つ以上そろえよう。</p>
           </div>
         </div>
       </div>
 
       <aside class="panel rules">
         <h2>あそび方</h2>
+        <p id="ruleText">同じ味の猫缶を縦か横に4つ以上そろえると消えます。</p>
         <p>2〜4個の猫缶がつながった仕分けセットが棚に落ちます。</p>
-        <p>固定後は1マス1猫缶。同じ味が横に4つ以上つながると消えます。</p>
-        <p>横一列ぜんぶを埋める必要はありません。味がそろった横並びだけが消えます。</p>
+        <p>固定後は1マス1猫缶として棚に並びます。</p>
+        <p>横一列ぜんぶを埋める必要はありません。指定数以上そろった同じ味だけが消えます。</p>
         <p>PCは←→で移動、↓で早く落下、↑またはSpaceで回転、Enterで開始です。</p>
         <div class="flavors" aria-label="味一覧">
           <div class="flavor-row"><span class="swatch" style="background:#e95b58"></span>まぐろ</div>
@@ -393,6 +421,9 @@
     const nextCanEl = document.getElementById("nextCan");
     const startBtn = document.getElementById("startBtn");
     const messageEl = document.getElementById("message");
+    const matchCountSelect = document.getElementById("matchCountSelect");
+    const ruleValueEl = document.getElementById("ruleValue");
+    const ruleTextEl = document.getElementById("ruleText");
 
     const COLS = 8;
     const ROWS = 14;
@@ -425,6 +456,7 @@
     let resolving = false;
     let clearingCells = new Set();
     let scorePopups = [];
+    let matchCount = 4;
     let dropTimer = 0;
     let lastTime = 0;
     let animationId = null;
@@ -503,7 +535,26 @@
       messageEl.classList.remove("is-visible");
     }
 
+    function getRuleText() {
+      return `同じ味の猫缶を縦か横に${matchCount}つ以上そろえると消えます。`;
+    }
+
+    function updateRuleDisplay() {
+      ruleValueEl.textContent = `縦横 ${matchCount}つ以上`;
+      ruleTextEl.textContent = getRuleText();
+    }
+
+    function showStartMessage() {
+      showMessage(
+        "開店準備中",
+        `ゲームスタートを押すと開始します。<br>猫缶セットを回転させて、${getRuleText()}`
+      );
+    }
+
     function startGame() {
+      matchCount = Number(matchCountSelect.value);
+      updateRuleDisplay();
+      matchCountSelect.disabled = true;
       board = makeBoard();
       current = null;
       nextSet = makeSet();
@@ -544,6 +595,7 @@
       running = false;
       gameOver = true;
       current = null;
+      matchCountSelect.disabled = false;
       setStatus("閉店");
       startBtn.textContent = "もう一度遊ぶ";
       showMessage("ゲームオーバー", `スコア ${score} 点<br>棚がいっぱいになりました。<br>もう一度遊ぶを押すと再開します。`);
@@ -655,9 +707,16 @@
     }
 
     function getClearPoints(count, chain) {
-      let base = 40;
-      if (count === 5) base = 70;
-      if (count >= 6) base = 100 + (count - 6) * 30;
+      let base;
+      if (matchCount === 3) {
+        base = 30;
+        if (count === 4) base = 50;
+        if (count >= 5) base = 80 + (count - 5) * 30;
+      } else {
+        base = 40;
+        if (count === 5) base = 70;
+        if (count >= 6) base = 100 + (count - 6) * 30;
+      }
       return Math.floor(base * (1 + (chain - 1) * 0.5));
     }
 
@@ -678,10 +737,34 @@
             col++;
           }
 
-          if (col - startCol >= 4) {
+          if (col - startCol >= matchCount) {
             const cells = [];
             for (let matchCol = startCol; matchCol < col; matchCol++) {
               cells.push([row, matchCol]);
+            }
+            found.push({ cells });
+          }
+        }
+      }
+
+      for (let col = 0; col < COLS; col++) {
+        let row = 0;
+        while (row < ROWS) {
+          const flavor = board[row][col];
+          if (!flavor) {
+            row++;
+            continue;
+          }
+
+          const startRow = row;
+          while (row < ROWS && board[row][col]?.id === flavor.id) {
+            row++;
+          }
+
+          if (row - startRow >= matchCount) {
+            const cells = [];
+            for (let matchRow = startRow; matchRow < row; matchRow++) {
+              cells.push([matchRow, col]);
             }
             found.push({ cells });
           }
@@ -957,7 +1040,15 @@
     });
 
     startBtn.addEventListener("click", startGame);
+    matchCountSelect.addEventListener("change", () => {
+      if (running) return;
+      matchCount = Number(matchCountSelect.value);
+      updateRuleDisplay();
+      showStartMessage();
+    });
 
+    updateRuleDisplay();
+    showStartMessage();
     updateNextCan();
     draw();
   </script>

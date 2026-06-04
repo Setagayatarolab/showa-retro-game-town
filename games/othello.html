@@ -57,6 +57,23 @@
       margin: 15px;
     }
 
+    .notice {
+      min-height: 24px;
+      margin: 8px auto;
+      color: #b83220;
+      font-weight: bold;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+
+    .notice.show {
+      opacity: 1;
+    }
+
+    .notice.hide {
+      opacity: 0;
+    }
+
     #score {
       font-size: 18px;
       margin-bottom: 10px;
@@ -162,11 +179,22 @@
       </select>
     </div>
 
+    <div class="setting-block">
+      <label>
+        <strong>ガイド表示</strong><br>
+        <select id="guideSelect">
+          <option value="on">あり</option>
+          <option value="off">なし</option>
+        </select>
+      </label>
+    </div>
+
     <button onclick="startGame()">ゲーム開始</button>
     <button onclick="resetGame()">最初から</button>
   </div>
 
   <div id="info">設定を選んでゲーム開始を押してください</div>
+  <div id="notice" class="notice hide"></div>
   <div id="score">黒: 2　白: 2</div>
   <div id="board"></div>
 
@@ -183,6 +211,8 @@
     let cpuColor = WHITE;
     let gameStarted = false;
     let gameOver = false;
+    let guideMode = "on";
+    let noticeTimer = null;
 
     const directions = [
       [-1, -1], [-1, 0], [-1, 1],
@@ -204,6 +234,7 @@
     function startGame() {
       gameMode = document.getElementById("modeSelect").value;
       cpuLevel = document.getElementById("levelSelect").value;
+      guideMode = document.getElementById("guideSelect").value;
 
       const selectedColor = document.getElementById("colorSelect").value;
 
@@ -223,6 +254,19 @@
         updateInfo();
         setTimeout(cpuMove, 700);
       }
+    }
+
+    function showNotice(message) {
+      const notice = document.getElementById("notice");
+      notice.textContent = message;
+      notice.classList.remove("hide");
+      notice.classList.add("show");
+
+      clearTimeout(noticeTimer);
+      noticeTimer = setTimeout(() => {
+        notice.classList.remove("show");
+        notice.classList.add("hide");
+      }, 1200);
     }
 
     function resetGame() {
@@ -295,6 +339,7 @@
 
     function shouldShowHint(row, col) {
       if (!gameStarted || gameOver) return false;
+      if (guideMode === "off") return false;
 
       if (gameMode === "two") {
         return getFlippableStones(row, col, currentPlayer).length > 0;
@@ -308,17 +353,32 @@
     }
 
     function placeStone(row, col) {
-      if (!gameStarted || gameOver) return;
-
-      if (gameMode === "cpu" && currentPlayer === cpuColor) {
+      if (!gameStarted) {
+        showNotice("先にゲーム開始を押してください");
         return;
       }
 
-      if (board[row][col] !== EMPTY) return;
+      if (gameOver) {
+        showNotice("ゲームは終了しています");
+        return;
+      }
+
+      if (gameMode === "cpu" && currentPlayer === cpuColor) {
+        showNotice("コンピュータの番です");
+        return;
+      }
+
+      if (board[row][col] !== EMPTY) {
+        showNotice("そこには置けません");
+        return;
+      }
 
       const flippableStones = getFlippableStones(row, col, currentPlayer);
 
-      if (flippableStones.length === 0) return;
+      if (flippableStones.length === 0) {
+        showNotice("そこには置けません");
+        return;
+      }
 
       board[row][col] = currentPlayer;
 
@@ -339,7 +399,7 @@
           endGame();
           return;
         } else {
-          alert("置ける場所がないのでパスします");
+          showNotice("置ける場所がないのでパスします");
         }
       }
 
@@ -591,12 +651,7 @@
       document.getElementById("score").textContent =
         "黒: " + counts.black + "　白: " + counts.white;
 
-      alert(
-        "ゲーム終了！\n" +
-        "黒: " + counts.black + "\n" +
-        "白: " + counts.white + "\n\n" +
-        resultText
-      );
+      showNotice(resultText);
     }
 
     setupBoard();
