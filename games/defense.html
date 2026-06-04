@@ -210,7 +210,6 @@
     let animationId;
     let audioCtx = null;
     let masterGain = null;
-    let audioUnlocked = false;
     let soundEnabled = true;
 
     function resetGame() {
@@ -644,7 +643,10 @@
     function initAudio() {
       try {
         if (!audioCtx) {
-          audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+          const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+          if (!AudioContextClass) return;
+
+          audioCtx = new AudioContextClass();
           masterGain = audioCtx.createGain();
           masterGain.gain.value = 0.08;
           masterGain.connect(audioCtx.destination);
@@ -654,33 +656,7 @@
           audioCtx.resume();
         }
       } catch (e) {
-        // 音が使えない環境でもゲームは続行
-      }
-    }
-
-    function unlockAudio() {
-      if (audioUnlocked) return;
-
-      try {
-        initAudio();
-
-        if (!audioCtx || !masterGain) return;
-
-        const now = audioCtx.currentTime;
-        const osc = audioCtx.createOscillator();
-        const gain = audioCtx.createGain();
-
-        osc.type = "square";
-        osc.frequency.value = 440;
-        gain.gain.setValueAtTime(0.0001, now);
-        gain.gain.exponentialRampToValueAtTime(0.00001, now + 0.03);
-        osc.connect(gain);
-        gain.connect(masterGain);
-        osc.start(now);
-        osc.stop(now + 0.03);
-        audioUnlocked = true;
-      } catch (e) {
-        // iOSで失敗してもゲームは続行
+        console.log("Audio init failed", e);
       }
     }
 
@@ -692,18 +668,19 @@
 
         if (!audioCtx || !masterGain) return;
 
+        const now = audioCtx.currentTime;
         const osc = audioCtx.createOscillator();
         const gain = audioCtx.createGain();
-        osc.frequency.value = freq;
         osc.type = "square";
-        gain.gain.setValueAtTime(0.035, audioCtx.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
+        osc.frequency.setValueAtTime(freq, now);
+        gain.gain.setValueAtTime(0.05, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + duration);
         osc.connect(gain);
         gain.connect(masterGain);
-        osc.start(audioCtx.currentTime);
-        osc.stop(audioCtx.currentTime + duration);
+        osc.start(now);
+        osc.stop(now + duration);
       } catch (e) {
-        // 音が鳴らない環境でもゲームは続行
+        console.log("Beep failed", e);
       }
     }
 
@@ -713,7 +690,7 @@
 
     document.addEventListener("keydown", (e) => {
       if (e.code === "Space" || e.key === "Enter") {
-        unlockAudio();
+        initAudio();
       }
       if (e.key === "ArrowLeft") keys.left = true;
       if (e.key === "ArrowRight") keys.right = true;
@@ -734,7 +711,7 @@
     function bindHold(button, keyName) {
       button.addEventListener("pointerdown", (e) => {
         e.preventDefault();
-        unlockAudio();
+        initAudio();
         keys[keyName] = true;
         if (keyName === "shoot") startOrRestart();
       });
@@ -748,31 +725,31 @@
     bindHold(rightBtn, "right");
     bindHold(shootBtn, "shoot");
     startGameBtn.addEventListener("pointerdown", () => {
-      unlockAudio();
+      initAudio();
     });
     startGameBtn.addEventListener("click", () => {
-      unlockAudio();
+      initAudio();
       startOrRestart();
     });
     soundBtn.addEventListener("click", () => {
       soundEnabled = !soundEnabled;
-      if (soundEnabled) unlockAudio();
+      if (soundEnabled) initAudio();
       updateSoundButton();
     });
     canvas.addEventListener("pointerdown", () => {
-      unlockAudio();
+      initAudio();
     });
     canvas.addEventListener("touchstart", () => {
-      unlockAudio();
+      initAudio();
     }, { passive: true });
     shootBtn.addEventListener("touchstart", () => {
-      unlockAudio();
+      initAudio();
     }, { passive: true });
     startGameBtn.addEventListener("touchstart", () => {
-      unlockAudio();
+      initAudio();
     }, { passive: true });
     soundBtn.addEventListener("pointerdown", () => {
-      unlockAudio();
+      initAudio();
     });
 
     gameState = "start";
