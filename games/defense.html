@@ -210,6 +210,7 @@
     let animationId;
     let audioCtx = null;
     let masterGain = null;
+    let audioUnlocked = false;
     let soundEnabled = true;
 
     function resetGame() {
@@ -657,6 +658,32 @@
       }
     }
 
+    function unlockAudio() {
+      if (audioUnlocked) return;
+
+      try {
+        initAudio();
+
+        if (!audioCtx || !masterGain) return;
+
+        const now = audioCtx.currentTime;
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+
+        osc.type = "square";
+        osc.frequency.value = 440;
+        gain.gain.setValueAtTime(0.0001, now);
+        gain.gain.exponentialRampToValueAtTime(0.00001, now + 0.03);
+        osc.connect(gain);
+        gain.connect(masterGain);
+        osc.start(now);
+        osc.stop(now + 0.03);
+        audioUnlocked = true;
+      } catch (e) {
+        // iOSで失敗してもゲームは続行
+      }
+    }
+
     function beep(freq, duration) {
       if (!soundEnabled) return;
 
@@ -686,7 +713,7 @@
 
     document.addEventListener("keydown", (e) => {
       if (e.code === "Space" || e.key === "Enter") {
-        initAudio();
+        unlockAudio();
       }
       if (e.key === "ArrowLeft") keys.left = true;
       if (e.key === "ArrowRight") keys.right = true;
@@ -707,7 +734,7 @@
     function bindHold(button, keyName) {
       button.addEventListener("pointerdown", (e) => {
         e.preventDefault();
-        if (keyName === "shoot") initAudio();
+        unlockAudio();
         keys[keyName] = true;
         if (keyName === "shoot") startOrRestart();
       });
@@ -720,17 +747,32 @@
     bindHold(leftBtn, "left");
     bindHold(rightBtn, "right");
     bindHold(shootBtn, "shoot");
+    startGameBtn.addEventListener("pointerdown", () => {
+      unlockAudio();
+    });
     startGameBtn.addEventListener("click", () => {
-      initAudio();
+      unlockAudio();
       startOrRestart();
     });
     soundBtn.addEventListener("click", () => {
       soundEnabled = !soundEnabled;
-      if (soundEnabled) initAudio();
+      if (soundEnabled) unlockAudio();
       updateSoundButton();
     });
     canvas.addEventListener("pointerdown", () => {
-      initAudio();
+      unlockAudio();
+    });
+    canvas.addEventListener("touchstart", () => {
+      unlockAudio();
+    }, { passive: true });
+    shootBtn.addEventListener("touchstart", () => {
+      unlockAudio();
+    }, { passive: true });
+    startGameBtn.addEventListener("touchstart", () => {
+      unlockAudio();
+    }, { passive: true });
+    soundBtn.addEventListener("pointerdown", () => {
+      unlockAudio();
     });
 
     gameState = "start";

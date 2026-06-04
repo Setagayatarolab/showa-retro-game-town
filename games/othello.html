@@ -189,8 +189,8 @@
       </label>
     </div>
 
-    <button onclick="startGame()">ゲーム開始</button>
-    <button onclick="resetGame()">最初から</button>
+    <button id="startBtn" onclick="startGame()">ゲーム開始</button>
+    <button id="resetBtn" onclick="resetGame()">最初から</button>
   </div>
 
   <div id="info">設定を選んでゲーム開始を押してください</div>
@@ -213,6 +213,10 @@
     let gameOver = false;
     let guideMode = "on";
     let noticeTimer = null;
+    let audioCtx = null;
+    let masterGain = null;
+    let audioUnlocked = false;
+    let soundEnabled = true;
 
     const directions = [
       [-1, -1], [-1, 0], [-1, 1],
@@ -230,6 +234,74 @@
       [-20, -40, -5, -5, -5, -5, -40, -20],
       [120, -20, 20, 5, 5, 20, -20, 120]
     ];
+
+    function initAudio() {
+      try {
+        if (!audioCtx) {
+          audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+          masterGain = audioCtx.createGain();
+          masterGain.gain.value = 0.08;
+          masterGain.connect(audioCtx.destination);
+        }
+
+        if (audioCtx.state === "suspended") {
+          audioCtx.resume();
+        }
+      } catch (e) {
+        // 音が使えない環境でもゲームは続行
+      }
+    }
+
+    function unlockAudio() {
+      if (audioUnlocked) return;
+
+      try {
+        initAudio();
+
+        if (!audioCtx || !masterGain) return;
+
+        const now = audioCtx.currentTime;
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+
+        osc.type = "square";
+        osc.frequency.value = 440;
+        gain.gain.setValueAtTime(0.0001, now);
+        gain.gain.exponentialRampToValueAtTime(0.00001, now + 0.03);
+        osc.connect(gain);
+        gain.connect(masterGain);
+        osc.start(now);
+        osc.stop(now + 0.03);
+        audioUnlocked = true;
+      } catch (e) {
+        // iOSで失敗してもゲームは続行
+      }
+    }
+
+    function beep(freq, duration) {
+      if (!soundEnabled) return;
+
+      try {
+        initAudio();
+
+        if (!audioCtx || !masterGain) return;
+
+        const now = audioCtx.currentTime;
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+
+        osc.type = "square";
+        osc.frequency.setValueAtTime(freq, now);
+        gain.gain.setValueAtTime(0.035, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + duration);
+        osc.connect(gain);
+        gain.connect(masterGain);
+        osc.start(now);
+        osc.stop(now + duration);
+      } catch (e) {
+        // 音が鳴らない環境でもゲームは続行
+      }
+    }
 
     function startGame() {
       gameMode = document.getElementById("modeSelect").value;
@@ -653,6 +725,30 @@
 
       showNotice(resultText);
     }
+
+    document.getElementById("startBtn").addEventListener("pointerdown", () => {
+      unlockAudio();
+    });
+
+    document.getElementById("startBtn").addEventListener("touchstart", () => {
+      unlockAudio();
+    }, { passive: true });
+
+    document.getElementById("startBtn").addEventListener("click", () => {
+      unlockAudio();
+    });
+
+    document.getElementById("resetBtn").addEventListener("pointerdown", () => {
+      unlockAudio();
+    });
+
+    document.getElementById("board").addEventListener("pointerdown", () => {
+      unlockAudio();
+    });
+
+    document.getElementById("board").addEventListener("touchstart", () => {
+      unlockAudio();
+    }, { passive: true });
 
     setupBoard();
   </script>

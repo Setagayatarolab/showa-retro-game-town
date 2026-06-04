@@ -212,6 +212,10 @@
     let leftPressed = false;
     let rightPressed = false;
     let animationId = null;
+    let audioCtx = null;
+    let masterGain = null;
+    let audioUnlocked = false;
+    let soundEnabled = true;
 
     const paddle = {
       w: 110,
@@ -324,6 +328,74 @@
         "最終スコア：" + score + "点<br>もう一回いく？",
         "もう一度"
       );
+    }
+
+    function initAudio() {
+      try {
+        if (!audioCtx) {
+          audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+          masterGain = audioCtx.createGain();
+          masterGain.gain.value = 0.08;
+          masterGain.connect(audioCtx.destination);
+        }
+
+        if (audioCtx.state === "suspended") {
+          audioCtx.resume();
+        }
+      } catch (e) {
+        // 音が使えない環境でもゲームは続行
+      }
+    }
+
+    function unlockAudio() {
+      if (audioUnlocked) return;
+
+      try {
+        initAudio();
+
+        if (!audioCtx || !masterGain) return;
+
+        const now = audioCtx.currentTime;
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+
+        osc.type = "square";
+        osc.frequency.value = 440;
+        gain.gain.setValueAtTime(0.0001, now);
+        gain.gain.exponentialRampToValueAtTime(0.00001, now + 0.03);
+        osc.connect(gain);
+        gain.connect(masterGain);
+        osc.start(now);
+        osc.stop(now + 0.03);
+        audioUnlocked = true;
+      } catch (e) {
+        // iOSで失敗してもゲームは続行
+      }
+    }
+
+    function beep(freq, duration) {
+      if (!soundEnabled) return;
+
+      try {
+        initAudio();
+
+        if (!audioCtx || !masterGain) return;
+
+        const now = audioCtx.currentTime;
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+
+        osc.type = "square";
+        osc.frequency.setValueAtTime(freq, now);
+        gain.gain.setValueAtTime(0.035, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + duration);
+        osc.connect(gain);
+        gain.connect(masterGain);
+        osc.start(now);
+        osc.stop(now + duration);
+      } catch (e) {
+        // 音が鳴らない環境でもゲームは続行
+      }
     }
 
     function drawRoundedRect(x, y, w, h, radius) {
@@ -542,6 +614,7 @@
     }
 
     document.addEventListener("keydown", (e) => {
+      if (e.key === " " || e.key === "Enter") unlockAudio();
       if (e.key === "ArrowLeft") leftPressed = true;
       if (e.key === "ArrowRight") rightPressed = true;
       if (e.key === " " || e.key === "Enter") startGame();
@@ -558,6 +631,7 @@
 
     canvas.addEventListener("touchstart", (e) => {
       e.preventDefault();
+      unlockAudio();
       if (!running) startGame();
       setPaddleByClientX(e.touches[0].clientX);
     }, { passive: false });
@@ -567,7 +641,22 @@
       setPaddleByClientX(e.touches[0].clientX);
     }, { passive: false });
 
-    startBtn.addEventListener("click", startGame);
+    canvas.addEventListener("pointerdown", () => {
+      unlockAudio();
+    });
+
+    startBtn.addEventListener("pointerdown", () => {
+      unlockAudio();
+    });
+
+    startBtn.addEventListener("touchstart", () => {
+      unlockAudio();
+    }, { passive: true });
+
+    startBtn.addEventListener("click", () => {
+      unlockAudio();
+      startGame();
+    });
 
     makeBricks();
     resetBallAndPaddle();
