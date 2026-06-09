@@ -1,0 +1,1133 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>ピコピコもぐら横丁</title>
+  <link rel="icon" type="image/svg+xml" href="../images/favicon.svg">
+  <link rel="preload" as="image" href="../images/mogura/mogura-normal.webp">
+  <link rel="preload" as="image" href="../images/mogura/mogura-cat.webp">
+  <link rel="preload" as="image" href="../images/mogura/mogura-gold.webp">
+  <link rel="preload" as="image" href="../images/mogura/item-clock.webp">
+  <link rel="preload" as="image" href="../images/mogura/item-double.webp">
+  <link rel="preload" as="image" href="../images/mogura/item-hammer.webp">
+  <style>
+    * {
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+    }
+
+    html,
+    body {
+      margin: 0;
+      min-height: 100%;
+      overscroll-behavior: none;
+    }
+
+    body {
+      min-height: 100vh;
+      color: #fff4c4;
+      background:
+        linear-gradient(rgba(54, 22, 12, 0.2), rgba(20, 10, 7, 0.72)),
+        linear-gradient(180deg, #b84b32 0%, #6f2f23 35%, #28150e 100%);
+      font-family: "Hiragino Maru Gothic ProN", "Yu Gothic", "Meiryo", system-ui, sans-serif;
+      touch-action: manipulation;
+    }
+
+    button,
+    select {
+      font: inherit;
+    }
+
+    .page {
+      width: min(760px, calc(100% - 18px));
+      margin: 0 auto;
+      padding: 12px 0 20px;
+    }
+
+    .back-link {
+      display: inline-block;
+      margin-bottom: 6px;
+      color: #fff4c4;
+      text-decoration: none;
+      font-size: 14px;
+      font-weight: 800;
+      text-shadow: 1px 1px 0 #3b1a0a;
+    }
+
+    .back-link:hover {
+      text-decoration: underline;
+    }
+
+    h1 {
+      margin: 0 0 10px;
+      color: #ffe082;
+      text-align: center;
+      font-size: clamp(25px, 6vw, 42px);
+      text-shadow: 3px 3px 0 #5a2517, 0 0 12px rgba(255, 215, 94, 0.45);
+    }
+
+    .cabinet {
+      padding: 10px;
+      background: #522b18;
+      border: 6px solid #2a160d;
+      border-radius: 8px;
+      box-shadow: 0 10px 0 #170c08, 0 18px 32px rgba(0, 0, 0, 0.38);
+    }
+
+    .hud {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr) auto;
+      gap: 7px;
+      margin-bottom: 9px;
+    }
+
+    .hud-item {
+      min-width: 0;
+      padding: 7px 5px;
+      color: #2f170b;
+      text-align: center;
+      background: #ffe7a0;
+      border: 2px solid #8b421f;
+      border-radius: 6px;
+      box-shadow: inset 0 -3px 0 rgba(139, 66, 31, 0.18);
+    }
+
+    .hud-item span {
+      display: block;
+      color: #9a3624;
+      font-size: 11px;
+      font-weight: 900;
+    }
+
+    .hud-item strong {
+      display: block;
+      overflow: hidden;
+      font-size: clamp(17px, 4vw, 24px);
+      line-height: 1.15;
+      white-space: nowrap;
+    }
+
+    .combo-value.bump {
+      animation: combo-bump 0.22s ease-out;
+    }
+
+    @keyframes combo-bump {
+      50% { transform: scale(1.28); color: #d63820; }
+    }
+
+    .sound-button {
+      min-width: 76px;
+      color: #2d170b;
+      background: #ffcf4a;
+      border: 2px solid #713415;
+      border-radius: 7px;
+      font-size: 13px;
+      font-weight: 900;
+      cursor: pointer;
+      box-shadow: 0 4px 0 #713415;
+    }
+
+    .sound-button:active {
+      transform: translateY(3px);
+      box-shadow: 0 1px 0 #713415;
+    }
+
+    .effects {
+      min-height: 28px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      margin-bottom: 7px;
+      color: #ffe082;
+      font-weight: 900;
+      text-shadow: 1px 1px 0 #3b1a0a;
+    }
+
+    .notice {
+      min-height: 25px;
+      margin-bottom: 7px;
+      color: #fff4c4;
+      text-align: center;
+      font-weight: 900;
+      opacity: 0;
+      transition: opacity 0.18s ease;
+    }
+
+    .notice.show {
+      opacity: 1;
+    }
+
+    .board-wrap {
+      position: relative;
+      padding: 12px;
+      overflow: hidden;
+      background:
+        linear-gradient(rgba(255, 222, 128, 0.08) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 222, 128, 0.08) 1px, transparent 1px),
+        #24130c;
+      background-size: 24px 24px;
+      border: 4px solid #1b0e09;
+      border-radius: 6px;
+      touch-action: none;
+    }
+
+    .board {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: clamp(8px, 2.5vw, 16px);
+      aspect-ratio: 1 / 1;
+    }
+
+    .hole {
+      position: relative;
+      isolation: isolate;
+      min-width: 0;
+      overflow: hidden;
+      background:
+        linear-gradient(160deg, rgba(255, 255, 255, 0.12), transparent 38%),
+        #75401f;
+      border: 4px solid #b66b31;
+      border-bottom-color: #3b1d0e;
+      border-radius: 7px;
+      box-shadow: inset 0 8px 0 rgba(255, 221, 141, 0.13), 0 5px 0 #1b0e09;
+      cursor: crosshair;
+      touch-action: none;
+    }
+
+    .hole-ellipse {
+      position: absolute;
+      left: 50%;
+      bottom: 6%;
+      width: 70%;
+      height: 12%;
+      transform: translateX(-50%);
+      z-index: 0;
+      background: #120503;
+      border: 0;
+      outline: 0;
+      border-radius: 50%;
+      box-shadow: inset 0 5px 8px rgba(0, 0, 0, 0.55);
+      pointer-events: none;
+    }
+
+    .pop-slot {
+      position: absolute;
+      left: 50%;
+      bottom: 10%;
+      z-index: 3;
+      width: 60%;
+      height: 64%;
+      transform: translateX(-50%);
+      overflow: hidden;
+      pointer-events: none;
+    }
+
+    .creature {
+      position: absolute;
+      left: 50%;
+      bottom: -8%;
+      z-index: 3;
+      width: 100%;
+      height: 100%;
+      display: grid;
+      place-items: end center;
+      transform: translate(-50%, 108%);
+      transition: transform 0.18s cubic-bezier(0.2, 0.85, 0.3, 1.08);
+      pointer-events: none;
+    }
+
+    .hole.active .creature {
+      transform: translate(-50%, 3%);
+      pointer-events: auto;
+    }
+
+    .creature-image {
+      display: block;
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      object-position: center bottom;
+      transform: scale(1.06) translateY(7%);
+      transform-origin: center bottom;
+      filter: drop-shadow(0 4px 2px rgba(33, 13, 7, 0.48));
+      pointer-events: none;
+      -webkit-user-drag: none;
+    }
+
+    .hole.active .creature-image {
+      pointer-events: auto;
+    }
+
+    .creature.pico .creature-image,
+    .creature.cat-pico .creature-image {
+      transform: scale(1.06) translateY(7%);
+    }
+
+    .creature.cat-pico .creature-image {
+      filter:
+        sepia(0.2)
+        saturate(0.82)
+        brightness(1.14)
+        drop-shadow(0 4px 2px rgba(33, 13, 7, 0.48));
+    }
+
+    .creature.golden .creature-image {
+      transform: scale(1.06) translateY(7%);
+      filter: drop-shadow(0 0 10px rgba(255, 212, 59, 0.9));
+      animation: gold-flash 0.32s steps(2) infinite;
+    }
+
+    @keyframes gold-flash {
+      50% {
+        filter:
+          brightness(1.3)
+          drop-shadow(0 0 14px rgba(255, 225, 88, 1));
+      }
+    }
+
+    .creature.item {
+      width: 78%;
+      height: 86%;
+    }
+
+    .creature.item .creature-image {
+      transform: scale(1.02) translateY(4%);
+    }
+
+    .creature.cat .creature-image {
+      transform: scale(1.06) translateY(7%);
+    }
+
+    .creature.item.hammer {
+      width: 74%;
+      height: 90%;
+    }
+
+    .popup-layer {
+      position: absolute;
+      inset: 0;
+      z-index: 8;
+      overflow: hidden;
+      pointer-events: none;
+    }
+
+    .score-popup {
+      position: absolute;
+      color: #fff4c4;
+      font-size: clamp(17px, 4vw, 25px);
+      font-weight: 900;
+      text-shadow: 2px 2px 0 #51200f, 0 0 8px #ffe080;
+      animation: popup-rise 0.85s ease-out forwards;
+    }
+
+    .score-popup.gold {
+      color: #ffe13e;
+      text-shadow: 2px 2px 0 #51200f, 0 0 12px #ffd43b;
+    }
+
+    .score-popup.bad {
+      color: #ff806e;
+    }
+
+    .score-popup.item-text {
+      color: #8ee8ff;
+    }
+
+    @keyframes popup-rise {
+      from { transform: translate(-50%, -20%); opacity: 1; }
+      to { transform: translate(-50%, -130%); opacity: 0; }
+    }
+
+    .panel {
+      position: absolute;
+      inset: 12px;
+      z-index: 12;
+      display: none;
+      place-items: center;
+      padding: 18px;
+      background: rgba(28, 13, 8, 0.86);
+    }
+
+    .panel.visible {
+      display: grid;
+    }
+
+    .panel-box {
+      width: min(430px, 100%);
+      padding: 19px;
+      color: #3a1a08;
+      text-align: center;
+      background: #fff0bd;
+      border: 4px solid #a84925;
+      border-radius: 8px;
+      box-shadow: 0 8px 0 #51200f;
+    }
+
+    .panel-box h2 {
+      margin: 0 0 9px;
+      color: #a63322;
+      font-size: clamp(24px, 6vw, 34px);
+    }
+
+    .panel-box p {
+      margin: 7px 0;
+      line-height: 1.65;
+    }
+
+    .new-record {
+      color: #d62f1f;
+      font-size: 21px;
+      font-weight: 900;
+    }
+
+    .settings {
+      margin-top: 12px;
+      padding: 12px;
+      color: #32190c;
+      text-align: center;
+      background: rgba(255, 239, 188, 0.94);
+      border: 4px solid #5a2b12;
+      border-radius: 8px;
+      box-shadow: 0 7px 0 #2a170b;
+    }
+
+    .settings.compact {
+      display: none;
+    }
+
+    .settings label {
+      display: inline-block;
+      margin-right: 8px;
+      font-weight: 900;
+    }
+
+    select {
+      padding: 9px 12px;
+      color: #32190c;
+      background: #fff9db;
+      border: 2px solid #8b421f;
+      border-radius: 6px;
+      font-weight: 800;
+    }
+
+    .start-button,
+    .return-button {
+      display: inline-block;
+      margin-top: 10px;
+      padding: 12px 22px;
+      color: #32190c;
+      background: #ffcf4a;
+      border: 0;
+      border-radius: 999px;
+      box-shadow: 0 5px 0 #9a5a13;
+      font-weight: 900;
+      text-decoration: none;
+      cursor: pointer;
+    }
+
+    .return-button {
+      margin-left: 7px;
+      color: #fff4c4;
+      background: #8c4324;
+      box-shadow: 0 5px 0 #4a2112;
+    }
+
+    .start-button:active,
+    .return-button:active {
+      transform: translateY(4px);
+      box-shadow: 0 1px 0 #6b310f;
+    }
+
+    .help {
+      margin: 10px 0 0;
+      color: #fff4c4;
+      text-align: center;
+      font-size: 13px;
+      line-height: 1.6;
+      text-shadow: 1px 1px 0 #3b1a0a;
+    }
+
+    @media (max-width: 560px) {
+      body.game-running {
+        overflow: hidden;
+      }
+
+      .page {
+        width: min(100% - 10px, 760px);
+        height: 100dvh;
+        padding: 5px 0;
+        display: flex;
+        flex-direction: column;
+      }
+
+      .back-link {
+        margin-bottom: 1px;
+        font-size: 12px;
+      }
+
+      h1 {
+        margin-bottom: 4px;
+        font-size: clamp(22px, 7vw, 31px);
+      }
+
+      .cabinet {
+        min-height: 0;
+        padding: 6px;
+        border-width: 4px;
+      }
+
+      .hud {
+        gap: 4px;
+        margin-bottom: 4px;
+      }
+
+      .hud-item {
+        padding: 4px 2px;
+        border-width: 1px;
+      }
+
+      .hud-item span {
+        font-size: 9px;
+      }
+
+      .hud-item strong {
+        font-size: clamp(14px, 4.5vw, 19px);
+      }
+
+      .sound-button {
+        min-width: 62px;
+        padding: 5px 7px;
+        font-size: 11px;
+      }
+
+      .effects,
+      .notice {
+        min-height: 20px;
+        margin-bottom: 2px;
+        font-size: 12px;
+      }
+
+      .board-wrap {
+        width: min(100%, calc(100dvh - 200px));
+        margin: 0 auto;
+        padding: 6px;
+      }
+
+      .board {
+        gap: 6px;
+      }
+
+      .hole {
+        border-width: 3px;
+      }
+
+      .settings {
+        margin-top: 6px;
+        padding: 6px;
+        font-size: 12px;
+      }
+
+      select {
+        padding: 6px 8px;
+      }
+
+      .start-button {
+        margin-top: 5px;
+        padding: 8px 15px;
+      }
+
+      .help {
+        display: none;
+      }
+
+      .panel {
+        inset: 6px;
+        padding: 8px;
+      }
+
+      .panel-box {
+        padding: 13px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <a class="back-link" href="../index.html">← 昭和レトロゲーム街へ戻る</a>
+    <h1>ピコピコもぐら横丁</h1>
+
+    <section class="cabinet" aria-label="ピコピコもぐら横丁ゲーム">
+      <div class="hud">
+        <div class="hud-item"><span>得点</span><strong id="score">0</strong></div>
+        <div class="hud-item"><span>最高</span><strong id="highScore">0</strong></div>
+        <div class="hud-item"><span>残り時間</span><strong id="time">60秒</strong></div>
+        <div class="hud-item"><span>コンボ</span><strong id="combo" class="combo-value">0</strong></div>
+        <button id="soundBtn" class="sound-button" type="button">音 ON</button>
+      </div>
+
+      <div id="effects" class="effects" aria-live="polite"></div>
+      <div id="notice" class="notice" aria-live="polite"></div>
+
+      <div id="boardWrap" class="board-wrap">
+        <div id="board" class="board" aria-label="3列3行のゲーム盤"></div>
+        <div id="popupLayer" class="popup-layer"></div>
+
+        <div id="startPanel" class="panel visible">
+          <div class="panel-box">
+            <h2>横丁開店前</h2>
+            <p>60秒間で、出てきたピコピコ生物を叩こう。<br>金色は高得点。猫は叩かないでね。</p>
+            <button id="panelStartBtn" class="start-button" type="button">ゲームスタート</button>
+          </div>
+        </div>
+
+        <div id="endPanel" class="panel">
+          <div class="panel-box">
+            <h2>ゲーム終了</h2>
+            <p id="recordMessage" class="new-record"></p>
+            <p>今回の得点：<strong id="finalScore">0</strong></p>
+            <p>最高得点：<strong id="finalHighScore">0</strong></p>
+            <p>最大コンボ：<strong id="finalMaxCombo">0</strong></p>
+            <button id="retryBtn" class="start-button" type="button">もう一度遊ぶ</button>
+            <a class="return-button" href="../index.html">ゲーム街へ戻る</a>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="settings" class="settings">
+      <label for="difficultySelect">難易度</label>
+      <select id="difficultySelect">
+        <option value="easy">ゆっくり</option>
+        <option value="normal" selected>ふつう</option>
+        <option value="hard">はやい</option>
+      </select>
+      <button id="startBtn" class="start-button" type="button">ゲームスタート</button>
+    </section>
+
+    <p class="help">出てきたピコピコ生物をクリック・タップ。金色は50点、猫はマイナス30点です。</p>
+  </main>
+
+  <script>
+    const boardEl = document.getElementById("board");
+    const boardWrapEl = document.getElementById("boardWrap");
+    const popupLayerEl = document.getElementById("popupLayer");
+    const scoreEl = document.getElementById("score");
+    const highScoreEl = document.getElementById("highScore");
+    const timeEl = document.getElementById("time");
+    const comboEl = document.getElementById("combo");
+    const effectsEl = document.getElementById("effects");
+    const noticeEl = document.getElementById("notice");
+    const settingsEl = document.getElementById("settings");
+    const difficultySelect = document.getElementById("difficultySelect");
+    const startBtn = document.getElementById("startBtn");
+    const panelStartBtn = document.getElementById("panelStartBtn");
+    const retryBtn = document.getElementById("retryBtn");
+    const soundBtn = document.getElementById("soundBtn");
+    const startPanel = document.getElementById("startPanel");
+    const endPanel = document.getElementById("endPanel");
+    const finalScoreEl = document.getElementById("finalScore");
+    const finalHighScoreEl = document.getElementById("finalHighScore");
+    const finalMaxComboEl = document.getElementById("finalMaxCombo");
+    const recordMessageEl = document.getElementById("recordMessage");
+
+    const HIGH_SCORE_KEY = "showa-retro-mogura-high-score";
+    const GAME_DURATION = 60;
+    const ITEM_TYPES = ["clock", "double", "hammer"];
+    const targetImages = {
+      pico: "../images/mogura/mogura-normal.webp",
+      "cat-pico": "../images/mogura/mogura-normal.webp",
+      golden: "../images/mogura/mogura-gold.webp",
+      cat: "../images/mogura/mogura-cat.webp",
+      clock: "../images/mogura/item-clock.webp",
+      double: "../images/mogura/item-double.webp",
+      hammer: "../images/mogura/item-hammer.webp"
+    };
+    const difficultySettings = {
+      easy: { minLife: 900, maxLife: 1300, maxActive: 1, spawnMin: 520, spawnMax: 850 },
+      normal: { minLife: 600, maxLife: 950, maxActive: 2, spawnMin: 350, spawnMax: 620 },
+      hard: { minLife: 350, maxLife: 650, maxActive: 3, spawnMin: 210, spawnMax: 420 }
+    };
+
+    let holes = [];
+    let activeTargets = new Map();
+    let running = false;
+    let score = 0;
+    let highScore = loadHighScore();
+    let combo = 0;
+    let maxCombo = 0;
+    let remainingTime = GAME_DURATION;
+    let endAt = 0;
+    let nextSpawnAt = 0;
+    let animationId = null;
+    let noticeTimer = null;
+    let doubleUntil = 0;
+    let hammerCharges = 0;
+    let nextItemAt = 0;
+    let audioCtx = null;
+    let masterGain = null;
+    let soundEnabled = true;
+
+    function loadHighScore() {
+      try {
+        return Number(localStorage.getItem(HIGH_SCORE_KEY)) || 0;
+      } catch (error) {
+        return 0;
+      }
+    }
+
+    function saveHighScore(value) {
+      try {
+        localStorage.setItem(HIGH_SCORE_KEY, String(value));
+      } catch (error) {
+        // 保存できない環境でもゲームは続行
+      }
+    }
+
+    function createBoard() {
+      boardEl.innerHTML = "";
+      holes = [];
+
+      for (let index = 0; index < 9; index++) {
+        const hole = document.createElement("button");
+        hole.className = "hole";
+        hole.type = "button";
+        hole.setAttribute("aria-label", `${index + 1}番の出現場所`);
+        hole.dataset.index = String(index);
+
+        const holeEllipse = document.createElement("span");
+        holeEllipse.className = "hole-ellipse";
+
+        const popSlot = document.createElement("span");
+        popSlot.className = "pop-slot";
+
+        const creature = document.createElement("span");
+        creature.className = "creature";
+        const image = document.createElement("img");
+        image.className = "creature-image";
+        image.alt = "";
+        image.draggable = false;
+        creature.appendChild(image);
+        popSlot.appendChild(creature);
+
+        hole.appendChild(holeEllipse);
+        hole.appendChild(popSlot);
+        hole.addEventListener("pointerdown", (event) => {
+          event.preventDefault();
+          initAudio();
+          handleHoleTap(index, event);
+        });
+        boardEl.appendChild(hole);
+        holes.push({ hole, creature });
+      }
+    }
+
+    function initAudio() {
+      try {
+        if (!audioCtx) {
+          const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+          if (!AudioContextClass) return;
+          audioCtx = new AudioContextClass();
+          masterGain = audioCtx.createGain();
+          masterGain.gain.value = 0.09;
+          masterGain.connect(audioCtx.destination);
+        }
+
+        if (audioCtx.state === "suspended") {
+          audioCtx.resume();
+        }
+      } catch (error) {
+        // 音が使えない環境でもゲームは続行
+      }
+    }
+
+    function tone(freq, duration, type = "square", volume = 0.04, delay = 0) {
+      if (!soundEnabled) return;
+
+      try {
+        initAudio();
+        if (!audioCtx || !masterGain) return;
+
+        const now = audioCtx.currentTime + delay;
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = type;
+        osc.frequency.setValueAtTime(freq, now);
+        gain.gain.setValueAtTime(volume, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + duration);
+        osc.connect(gain);
+        gain.connect(masterGain);
+        osc.start(now);
+        osc.stop(now + duration);
+      } catch (error) {
+        // 音が鳴らなくてもゲームは続行
+      }
+    }
+
+    function playSound(name) {
+      if (name === "normal") tone(330, 0.05);
+      if (name === "high") {
+        tone(620, 0.06, "square", 0.04);
+        tone(880, 0.08, "triangle", 0.035, 0.05);
+      }
+      if (name === "cat") tone(145, 0.13, "sawtooth", 0.035);
+      if (name === "item") {
+        tone(520, 0.06, "triangle", 0.035);
+        tone(760, 0.08, "triangle", 0.035, 0.06);
+      }
+      if (name === "combo") {
+        tone(660, 0.06, "square", 0.035);
+        tone(990, 0.1, "square", 0.035, 0.07);
+      }
+      if (name === "start") {
+        tone(300, 0.06, "square", 0.03);
+        tone(480, 0.07, "square", 0.03, 0.07);
+        tone(720, 0.1, "triangle", 0.035, 0.14);
+      }
+      if (name === "end") {
+        tone(520, 0.08, "square", 0.03);
+        tone(350, 0.1, "square", 0.03, 0.1);
+        tone(210, 0.16, "triangle", 0.03, 0.21);
+      }
+    }
+
+    function startGame() {
+      initAudio();
+      cancelAnimationFrame(animationId);
+      clearAllTargets();
+      popupLayerEl.innerHTML = "";
+      score = 0;
+      combo = 0;
+      maxCombo = 0;
+      remainingTime = GAME_DURATION;
+      doubleUntil = 0;
+      hammerCharges = 0;
+      running = true;
+      document.body.classList.add("game-running");
+      const now = performance.now();
+      endAt = now + GAME_DURATION * 1000;
+      nextSpawnAt = now + 450;
+      nextItemAt = now + randomBetween(9000, 16000);
+      startPanel.classList.remove("visible");
+      endPanel.classList.remove("visible");
+      settingsEl.classList.add("compact");
+      updateHud();
+      updateEffects();
+      showNotice("横丁、開店！");
+      playSound("start");
+      animationId = requestAnimationFrame(gameLoop);
+    }
+
+    function endGame() {
+      if (!running) return;
+      running = false;
+      document.body.classList.remove("game-running");
+      cancelAnimationFrame(animationId);
+      clearAllTargets();
+      playSound("end");
+
+      const isNewRecord = score > highScore;
+      if (isNewRecord) {
+        highScore = score;
+        saveHighScore(highScore);
+      }
+
+      highScoreEl.textContent = highScore;
+      finalScoreEl.textContent = score;
+      finalHighScoreEl.textContent = highScore;
+      finalMaxComboEl.textContent = maxCombo;
+      recordMessageEl.textContent = isNewRecord ? "新記録！" : "";
+      settingsEl.classList.remove("compact");
+      endPanel.classList.add("visible");
+    }
+
+    function gameLoop(now) {
+      if (!running) return;
+
+      remainingTime = Math.max(0, Math.ceil((endAt - now) / 1000));
+      timeEl.textContent = `${remainingTime}秒`;
+
+      expireTargets(now);
+      if (now >= nextSpawnAt) {
+        spawnWave(now);
+        scheduleNextSpawn(now);
+      }
+
+      updateEffects(now);
+      if (now >= endAt) {
+        endGame();
+        return;
+      }
+
+      animationId = requestAnimationFrame(gameLoop);
+    }
+
+    function scheduleNextSpawn(now) {
+      const settings = difficultySettings[difficultySelect.value];
+      nextSpawnAt = now + randomBetween(settings.spawnMin, settings.spawnMax);
+    }
+
+    function spawnWave(now) {
+      const settings = difficultySettings[difficultySelect.value];
+      const available = holes
+        .map((_, index) => index)
+        .filter((index) => !activeTargets.has(index));
+
+      if (available.length === 0) return;
+
+      const slots = Math.min(settings.maxActive - activeTargets.size, available.length);
+      if (slots <= 0) return;
+
+      const spawnCount = 1 + Math.floor(Math.random() * slots);
+      let itemAllowedThisWave = now >= nextItemAt;
+      for (let i = 0; i < spawnCount; i++) {
+        const pick = Math.floor(Math.random() * available.length);
+        const holeIndex = available.splice(pick, 1)[0];
+        spawnTarget(holeIndex, now, itemAllowedThisWave);
+        if (itemAllowedThisWave) {
+          nextItemAt = now + randomBetween(10000, 18000);
+          itemAllowedThisWave = false;
+        }
+      }
+    }
+
+    function chooseTargetType(allowItem) {
+      if (allowItem) {
+        return ITEM_TYPES[Math.floor(Math.random() * ITEM_TYPES.length)];
+      }
+
+      const roll = Math.random();
+      if (roll < 0.10) return "golden";
+      if (roll < 0.27) return "cat";
+      if (roll < 0.48) return "cat-pico";
+      return "pico";
+    }
+
+    function spawnTarget(holeIndex, now, allowItem) {
+      const settings = difficultySettings[difficultySelect.value];
+      const type = chooseTargetType(allowItem);
+      let lifetime = randomBetween(settings.minLife, settings.maxLife);
+      if (type === "golden") lifetime *= 0.72;
+      if (ITEM_TYPES.includes(type)) lifetime *= 0.88;
+
+      activeTargets.set(holeIndex, {
+        type,
+        expiresAt: now + lifetime,
+        hit: false
+      });
+
+      renderTarget(holeIndex, type);
+    }
+
+    function renderTarget(holeIndex, type) {
+      const { hole, creature } = holes[holeIndex];
+      creature.className = "creature";
+
+      if (type === "pico") creature.classList.add("pico");
+      if (type === "cat-pico") creature.classList.add("cat-pico");
+      if (type === "golden") creature.classList.add("golden");
+      if (type === "cat") creature.classList.add("cat");
+      if (ITEM_TYPES.includes(type)) creature.classList.add("item", type);
+
+      const image = creature.querySelector(".creature-image");
+      image.src = targetImages[type];
+
+      hole.classList.add("active");
+    }
+
+    function hideTarget(holeIndex) {
+      const entry = holes[holeIndex];
+      entry.hole.classList.remove("active");
+      window.setTimeout(() => {
+        if (!activeTargets.has(holeIndex)) {
+          entry.creature.className = "creature";
+          entry.creature.querySelector(".creature-image").removeAttribute("src");
+        }
+      }, 130);
+    }
+
+    function expireTargets(now) {
+      for (const [holeIndex, target] of activeTargets) {
+        if (now >= target.expiresAt) {
+          activeTargets.delete(holeIndex);
+          hideTarget(holeIndex);
+          if (!ITEM_TYPES.includes(target.type) && target.type !== "cat") {
+            breakCombo();
+          }
+        }
+      }
+    }
+
+    function handleHoleTap(holeIndex, event) {
+      if (!running) return;
+      const target = activeTargets.get(holeIndex);
+      const tappedCreature = event.target.closest(".creature");
+      if (!target || target.hit || !tappedCreature) {
+        breakCombo();
+        showNotice("空振り！");
+        return;
+      }
+
+      target.hit = true;
+      activeTargets.delete(holeIndex);
+      hideTarget(holeIndex);
+      const point = eventPoint(event);
+
+      if (ITEM_TYPES.includes(target.type)) {
+        collectItem(target.type, point);
+        return;
+      }
+
+      if (target.type === "cat") {
+        score = Math.max(0, score - 30);
+        breakCombo();
+        addPopup(point.x, point.y, "-30", "bad");
+        showNotice("猫は叩いちゃダメ！");
+        playSound("cat");
+        updateHud();
+        return;
+      }
+
+      let points = target.type === "golden" ? 50 : target.type === "cat-pico" ? 20 : 10;
+      if (performance.now() < doubleUntil) points *= 2;
+      if (hammerCharges > 0) {
+        points += 10;
+        hammerCharges--;
+      }
+
+      score += points;
+      combo++;
+      maxCombo = Math.max(maxCombo, combo);
+      const comboBonus = getComboBonus(combo);
+      if (comboBonus > 0) {
+        score += comboBonus;
+        addPopup(point.x, point.y - 22, `COMBO +${comboBonus}`, "gold");
+        playSound("combo");
+      } else {
+        playSound(target.type === "golden" ? "high" : "normal");
+      }
+
+      addPopup(point.x, point.y, `+${points}`, target.type === "golden" ? "gold" : "");
+      bumpCombo();
+      updateHud();
+      updateEffects();
+    }
+
+    function collectItem(type, point) {
+      const now = performance.now();
+      if (type === "clock") {
+        endAt += 5000;
+        remainingTime += 5;
+        addPopup(point.x, point.y, "時間＋5秒", "item-text");
+        showNotice("時間＋5秒");
+      }
+      if (type === "double") {
+        doubleUntil = now + 5000;
+        addPopup(point.x, point.y, "得点2倍！", "item-text");
+        showNotice("5秒間、得点2倍！");
+      }
+      if (type === "hammer") {
+        hammerCharges += 3;
+        addPopup(point.x, point.y, "お祭りハンマー", "item-text");
+        showNotice("次の成功3回に＋10点！");
+      }
+      playSound("item");
+      updateHud();
+      updateEffects();
+    }
+
+    function getComboBonus(value) {
+      if (value < 5 || value % 5 !== 0) return 0;
+      if (value === 5) return 20;
+      if (value === 10) return 50;
+      return 100;
+    }
+
+    function breakCombo() {
+      if (combo === 0) return;
+      combo = 0;
+      updateHud();
+    }
+
+    function bumpCombo() {
+      comboEl.classList.remove("bump");
+      void comboEl.offsetWidth;
+      comboEl.classList.add("bump");
+    }
+
+    function clearAllTargets() {
+      activeTargets.clear();
+      for (let index = 0; index < holes.length; index++) {
+        hideTarget(index);
+      }
+    }
+
+    function updateHud() {
+      scoreEl.textContent = score;
+      highScoreEl.textContent = Math.max(highScore, score);
+      timeEl.textContent = `${remainingTime}秒`;
+      comboEl.textContent = combo;
+    }
+
+    function updateEffects(now = performance.now()) {
+      const effects = [];
+      if (now < doubleUntil) {
+        const seconds = Math.max(1, Math.ceil((doubleUntil - now) / 1000));
+        effects.push(`得点2倍！ ${seconds}秒`);
+      }
+      if (hammerCharges > 0) effects.push(`お祭りハンマー 残り${hammerCharges}回`);
+      effectsEl.textContent = effects.join("　");
+    }
+
+    function showNotice(message) {
+      noticeEl.textContent = message;
+      noticeEl.classList.add("show");
+      clearTimeout(noticeTimer);
+      noticeTimer = setTimeout(() => noticeEl.classList.remove("show"), 1000);
+    }
+
+    function addPopup(x, y, text, className) {
+      const rect = boardWrapEl.getBoundingClientRect();
+      const popup = document.createElement("span");
+      popup.className = `score-popup ${className}`.trim();
+      popup.textContent = text;
+      popup.style.left = `${x - rect.left}px`;
+      popup.style.top = `${y - rect.top}px`;
+      popupLayerEl.appendChild(popup);
+      popup.addEventListener("animationend", () => popup.remove(), { once: true });
+    }
+
+    function eventPoint(event) {
+      return { x: event.clientX, y: event.clientY };
+    }
+
+    function randomBetween(min, max) {
+      return min + Math.random() * (max - min);
+    }
+
+    function toggleSound() {
+      soundEnabled = !soundEnabled;
+      soundBtn.textContent = soundEnabled ? "音 ON" : "音 OFF";
+      if (soundEnabled) initAudio();
+    }
+
+    [startBtn, panelStartBtn, retryBtn].forEach((button) => {
+      button.addEventListener("pointerdown", () => initAudio());
+      button.addEventListener("click", startGame);
+    });
+
+    soundBtn.addEventListener("pointerdown", () => initAudio());
+    soundBtn.addEventListener("click", toggleSound);
+
+    document.addEventListener("touchmove", (event) => {
+      if (running && event.target.closest(".board-wrap")) event.preventDefault();
+    }, { passive: false });
+
+    createBoard();
+    highScoreEl.textContent = highScore;
+    updateHud();
+  </script>
+</body>
+</html>
