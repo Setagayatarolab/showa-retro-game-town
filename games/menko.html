@@ -1,0 +1,1145 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>駄菓子屋メンコ合わせ</title>
+  <link rel="icon" type="image/svg+xml" href="../images/favicon.svg">
+  <link rel="preload" as="image" href="../images/menko/menko-back.webp">
+  <style>
+    * {
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+    }
+
+    html,
+    body {
+      margin: 0;
+      min-height: 100%;
+      overscroll-behavior: none;
+    }
+
+    body {
+      min-height: 100vh;
+      overflow-x: hidden;
+      color: #fff1bf;
+      background:
+        linear-gradient(rgba(77, 29, 18, 0.2), rgba(28, 13, 8, 0.78)),
+        repeating-linear-gradient(90deg, #853d27 0 38px, #7a3423 38px 41px);
+      font-family: "Hiragino Maru Gothic ProN", "Yu Gothic", "Meiryo", system-ui, sans-serif;
+      touch-action: manipulation;
+    }
+
+    button,
+    select {
+      font: inherit;
+    }
+
+    button {
+      touch-action: manipulation;
+    }
+
+    .page {
+      width: min(820px, calc(100% - 16px));
+      margin: 0 auto;
+      padding: 10px 0 24px;
+    }
+
+    .back-link {
+      display: inline-block;
+      margin-bottom: 4px;
+      color: #fff1bf;
+      text-decoration: none;
+      font-size: 14px;
+      font-weight: 800;
+      text-shadow: 1px 1px 0 #3b190f;
+    }
+
+    .back-link:hover {
+      text-decoration: underline;
+    }
+
+    h1 {
+      margin: 0 0 9px;
+      color: #ffe07b;
+      text-align: center;
+      font-size: clamp(25px, 6vw, 43px);
+      letter-spacing: 0;
+      text-shadow: 3px 3px 0 #5f2418, 0 0 10px rgba(255, 216, 94, 0.38);
+    }
+
+    .game-shell {
+      position: relative;
+      padding: 10px;
+      background: #512918;
+      border: 6px solid #27130c;
+      border-radius: 8px;
+      box-shadow: 0 9px 0 #160b07, 0 18px 32px rgba(0, 0, 0, 0.4);
+    }
+
+    .hud {
+      display: grid;
+      grid-template-columns: repeat(6, 1fr) auto;
+      gap: 6px;
+      margin-bottom: 9px;
+    }
+
+    .hud-box {
+      min-width: 0;
+      padding: 6px 3px;
+      color: #32170d;
+      text-align: center;
+      background: #ffe49a;
+      border: 2px solid #93401f;
+      border-radius: 5px;
+      box-shadow: inset 0 -3px rgba(147, 64, 31, 0.16);
+    }
+
+    .hud-box span {
+      display: block;
+      font-size: 10px;
+      font-weight: 900;
+    }
+
+    .hud-box strong {
+      display: block;
+      overflow: hidden;
+      color: #a23b25;
+      font-size: clamp(15px, 3vw, 21px);
+      line-height: 1.2;
+      white-space: nowrap;
+    }
+
+    .sound-button {
+      min-width: 68px;
+      color: #32170d;
+      background: #ffca48;
+      border: 2px solid #773317;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 900;
+      cursor: pointer;
+      box-shadow: 0 3px 0 #773317;
+    }
+
+    .sound-button:active {
+      transform: translateY(2px);
+      box-shadow: 0 1px 0 #773317;
+    }
+
+    .notice {
+      min-height: 28px;
+      display: grid;
+      place-items: center;
+      margin-bottom: 7px;
+      color: #ffe890;
+      font-weight: 900;
+      text-align: center;
+      opacity: 0;
+      transform: translateY(4px);
+      transition: 0.18s ease;
+    }
+
+    .notice.show {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .table {
+      position: relative;
+      padding: clamp(7px, 2vw, 14px);
+      overflow: hidden;
+      background:
+        linear-gradient(90deg, transparent 48%, rgba(51, 21, 12, 0.28) 50%, transparent 52%),
+        repeating-linear-gradient(0deg, rgba(255, 225, 145, 0.05) 0 2px, transparent 2px 28px),
+        #74411f;
+      border: 5px solid #29150d;
+      border-radius: 7px;
+      box-shadow: inset 0 0 20px rgba(23, 9, 5, 0.7);
+    }
+
+    .board {
+      display: grid;
+      grid-template-columns: repeat(var(--cols, 4), minmax(0, 1fr));
+      gap: clamp(5px, 1.5vw, 10px);
+      width: 100%;
+      margin: auto;
+    }
+
+    .board.easy {
+      width: min(100%, 560px);
+    }
+
+    .menko-card {
+      position: relative;
+      min-width: 0;
+      padding: 0;
+      aspect-ratio: 1;
+      background: transparent;
+      border: 0;
+      perspective: 700px;
+      cursor: pointer;
+    }
+
+    .menko-card:focus-visible {
+      outline: 3px solid #fff1a4;
+      outline-offset: 2px;
+    }
+
+    .card-inner {
+      position: absolute;
+      inset: 0;
+      transform-style: preserve-3d;
+      transition: transform 0.38s cubic-bezier(0.3, 0.75, 0.25, 1);
+    }
+
+    .menko-card.flipped .card-inner,
+    .menko-card.matched .card-inner {
+      transform: rotateY(180deg);
+    }
+
+    .card-face {
+      position: absolute;
+      inset: 0;
+      display: grid;
+      place-items: center;
+      overflow: hidden;
+      background: #f6df9c;
+      border: 3px solid #32180f;
+      border-radius: 12%;
+      backface-visibility: hidden;
+      box-shadow: 0 4px 0 #30160e, 0 6px 9px rgba(0, 0, 0, 0.35);
+    }
+
+    .card-face.front {
+      transform: rotateY(180deg);
+    }
+
+    .card-face img {
+      display: block;
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      pointer-events: none;
+    }
+
+    .menko-card.matched {
+      cursor: default;
+    }
+
+    .menko-card.matched .card-face.front {
+      box-shadow: 0 0 18px #ffe66e, 0 4px 0 #30160e;
+    }
+
+    .menko-card.matched {
+      animation: match-hop 0.55s ease;
+    }
+
+    .menko-card.wrong {
+      animation: wrong-shake 0.35s ease;
+    }
+
+    .menko-card.hint .card-inner {
+      filter: drop-shadow(0 0 9px #fff27a) brightness(1.22);
+      animation: hint-pulse 0.55s ease-in-out infinite alternate;
+    }
+
+    @keyframes match-hop {
+      45% { transform: translateY(-8px) scale(1.05); }
+    }
+
+    @keyframes wrong-shake {
+      25% { transform: translateX(-4px); }
+      50% { transform: translateX(4px); }
+      75% { transform: translateX(-3px); }
+    }
+
+    @keyframes hint-pulse {
+      to { transform: scale(1.06); }
+    }
+
+    .popup-layer {
+      position: absolute;
+      inset: 0;
+      z-index: 5;
+      overflow: hidden;
+      pointer-events: none;
+    }
+
+    .score-popup {
+      position: absolute;
+      color: #fff08a;
+      font-size: clamp(18px, 4vw, 27px);
+      font-weight: 900;
+      text-shadow: 2px 2px 0 #5b2014, 0 0 8px #ffdb50;
+      animation: score-rise 0.9s ease-out forwards;
+    }
+
+    @keyframes score-rise {
+      to { opacity: 0; transform: translateY(-38px) scale(1.12); }
+    }
+
+    .controls {
+      margin-top: 10px;
+      padding: 9px;
+      color: #3a1b10;
+      text-align: center;
+      background: #f8dfa0;
+      border: 3px solid #8d3e20;
+      border-radius: 7px;
+    }
+
+    .settings-row,
+    .item-row,
+    .command-row {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: center;
+      gap: 7px;
+    }
+
+    .settings-row {
+      margin-bottom: 8px;
+      font-weight: 900;
+    }
+
+    select {
+      min-height: 38px;
+      padding: 5px 10px;
+      color: #36180e;
+      background: #fff4c8;
+      border: 2px solid #81371c;
+      border-radius: 5px;
+      font-weight: 800;
+    }
+
+    .item-button,
+    .command-button {
+      min-height: 42px;
+      padding: 8px 12px;
+      border: 2px solid #713018;
+      border-radius: 6px;
+      font-size: 13px;
+      font-weight: 900;
+      cursor: pointer;
+      box-shadow: 0 3px 0 #713018;
+    }
+
+    .item-button {
+      color: #3b1b0f;
+      background: #fff0b0;
+    }
+
+    .command-button {
+      color: #32160c;
+      background: #ffca48;
+    }
+
+    .item-button:active,
+    .command-button:active {
+      transform: translateY(2px);
+      box-shadow: 0 1px 0 #713018;
+    }
+
+    button:disabled,
+    select:disabled {
+      cursor: default;
+      opacity: 0.45;
+    }
+
+    .help {
+      margin: 9px 0 0;
+      font-size: 12px;
+      line-height: 1.55;
+    }
+
+    .overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 20;
+      display: grid;
+      place-items: center;
+      padding: 18px;
+      background: rgba(27, 12, 7, 0.82);
+    }
+
+    .overlay.hidden {
+      display: none;
+    }
+
+    .dialog {
+      width: min(440px, 100%);
+      padding: 22px 18px;
+      color: #3a1a0f;
+      text-align: center;
+      background: #ffedb2;
+      border: 5px solid #8b3b20;
+      border-radius: 8px;
+      box-shadow: 0 10px 0 #32170e, 0 18px 32px rgba(0, 0, 0, 0.42);
+    }
+
+    .dialog h2 {
+      margin: 0 0 10px;
+      color: #a03926;
+      font-size: clamp(25px, 7vw, 36px);
+    }
+
+    .dialog p {
+      margin: 8px 0;
+      line-height: 1.65;
+    }
+
+    .dialog-difficulty {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      margin: 12px 0;
+      font-weight: 900;
+    }
+
+    .dialog-stats {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 6px;
+      margin: 12px 0;
+      font-weight: 900;
+    }
+
+    .dialog-stats span {
+      padding: 7px;
+      background: #fff7d7;
+      border: 2px solid #c2793f;
+      border-radius: 5px;
+    }
+
+    .new-record {
+      color: #d13925;
+      font-size: 22px;
+      font-weight: 900;
+    }
+
+    .dialog-actions {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 8px;
+    }
+
+    .dialog-actions a {
+      display: inline-grid;
+      min-height: 43px;
+      place-items: center;
+      padding: 8px 14px;
+      color: #3a1a0f;
+      background: #fff5ca;
+      border: 2px solid #713018;
+      border-radius: 6px;
+      font-weight: 900;
+      text-decoration: none;
+    }
+
+    .confetti {
+      position: fixed;
+      inset: 0;
+      z-index: 19;
+      overflow: hidden;
+      pointer-events: none;
+    }
+
+    .confetti i {
+      position: absolute;
+      top: -20px;
+      width: 9px;
+      height: 15px;
+      background: var(--color);
+      animation: fall var(--duration) linear forwards;
+    }
+
+    @keyframes fall {
+      to { transform: translate(var(--drift), 110vh) rotate(720deg); }
+    }
+
+    @media (max-width: 680px) {
+      .page {
+        width: min(100% - 8px, 820px);
+        padding-top: 6px;
+      }
+
+      .game-shell {
+        padding: 6px;
+        border-width: 4px;
+      }
+
+      .hud {
+        grid-template-columns: repeat(3, 1fr);
+      }
+
+      .sound-button {
+        min-height: 42px;
+      }
+
+      .table {
+        padding: 6px;
+        border-width: 3px;
+      }
+
+      .board {
+        gap: 5px;
+      }
+
+      .card-face {
+        border-width: 2px;
+        box-shadow: 0 3px 0 #30160e, 0 4px 6px rgba(0, 0, 0, 0.28);
+      }
+
+      .controls {
+        padding: 7px 5px;
+      }
+
+      .item-button,
+      .command-button {
+        flex: 1 1 30%;
+        padding: 7px 5px;
+        font-size: 12px;
+      }
+    }
+
+    @media (max-width: 380px) {
+      h1 {
+        font-size: 23px;
+      }
+
+      .hud-box strong {
+        font-size: 15px;
+      }
+
+      .item-button {
+        flex-basis: 46%;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <a class="back-link" href="../index.html">← 昭和レトロゲーム街へ戻る</a>
+    <h1>駄菓子屋メンコ合わせ</h1>
+
+    <section class="game-shell" aria-label="駄菓子屋メンコ合わせ">
+      <div class="hud">
+        <div class="hud-box"><span>得点</span><strong id="score">0</strong></div>
+        <div class="hud-box"><span>最高</span><strong id="highScore">0</strong></div>
+        <div class="hud-box"><span>手数</span><strong id="moves">0</strong></div>
+        <div class="hud-box"><span>残り時間</span><strong id="time">90</strong></div>
+        <div class="hud-box"><span>連続正解</span><strong id="streak">0</strong></div>
+        <div class="hud-box"><span>獲得</span><strong id="pairs">0 / 8</strong></div>
+        <button class="sound-button" id="soundBtn" type="button">音 ON</button>
+      </div>
+
+      <div class="notice" id="notice" aria-live="polite"></div>
+
+      <div class="table" id="table">
+        <div class="board" id="board" aria-label="メンコ盤面"></div>
+        <div class="popup-layer" id="popupLayer"></div>
+      </div>
+
+      <div class="controls">
+        <div class="settings-row">
+          <label for="difficultySelect">難易度</label>
+          <select id="difficultySelect">
+            <option value="easy">かんたん</option>
+            <option value="normal" selected>ふつう</option>
+            <option value="hard">むずかしい</option>
+          </select>
+        </div>
+
+        <div class="item-row">
+          <button class="item-button" id="peekBtn" type="button">ちら見札 1</button>
+          <button class="item-button" id="hintBtn" type="button">一組発見札 1</button>
+          <button class="item-button" id="timeBtn" type="button">時間＋10秒 1</button>
+        </div>
+
+        <div class="command-row">
+          <button class="command-button" id="startBtn" type="button">ゲームスタート</button>
+          <button class="command-button" id="restartBtn" type="button">最初から</button>
+        </div>
+
+        <p class="help">裏返しのメンコを2枚ずつ選び、同じ絵柄をそろえよう。アイテムは1ゲームに各1回使えます。</p>
+      </div>
+    </section>
+  </main>
+
+  <div class="overlay" id="overlay">
+    <div class="dialog">
+      <h2 id="dialogTitle">メンコ合わせ</h2>
+      <div id="dialogBody">
+        <p>裏返しのメンコを2枚ずつめくって、同じ絵柄をそろえよう。<br>少ない手数で全部集めると高得点！</p>
+      </div>
+      <label class="dialog-difficulty" for="dialogDifficultySelect">
+        難易度
+        <select id="dialogDifficultySelect">
+          <option value="easy">かんたん</option>
+          <option value="normal" selected>ふつう</option>
+          <option value="hard">むずかしい</option>
+        </select>
+      </label>
+      <div class="dialog-actions">
+        <button class="command-button" id="dialogStartBtn" type="button">ゲームスタート</button>
+        <a id="townLink" href="../index.html" hidden>ゲーム街へ戻る</a>
+      </div>
+    </div>
+  </div>
+
+  <div class="confetti" id="confetti" aria-hidden="true"></div>
+
+  <script>
+    const boardEl = document.getElementById("board");
+    const tableEl = document.getElementById("table");
+    const popupLayer = document.getElementById("popupLayer");
+    const scoreEl = document.getElementById("score");
+    const highScoreEl = document.getElementById("highScore");
+    const movesEl = document.getElementById("moves");
+    const timeEl = document.getElementById("time");
+    const streakEl = document.getElementById("streak");
+    const pairsEl = document.getElementById("pairs");
+    const noticeEl = document.getElementById("notice");
+    const difficultySelect = document.getElementById("difficultySelect");
+    const dialogDifficultySelect = document.getElementById("dialogDifficultySelect");
+    const soundBtn = document.getElementById("soundBtn");
+    const peekBtn = document.getElementById("peekBtn");
+    const hintBtn = document.getElementById("hintBtn");
+    const timeBtn = document.getElementById("timeBtn");
+    const startBtn = document.getElementById("startBtn");
+    const restartBtn = document.getElementById("restartBtn");
+    const overlay = document.getElementById("overlay");
+    const dialogTitle = document.getElementById("dialogTitle");
+    const dialogBody = document.getElementById("dialogBody");
+    const dialogStartBtn = document.getElementById("dialogStartBtn");
+    const townLink = document.getElementById("townLink");
+    const confettiEl = document.getElementById("confetti");
+
+    const MENKO_NAMES = [
+      "にこにこテレビ", "招き猫", "駄菓子屋さん", "ちび怪獣",
+      "おやつ袋", "レトロロボット", "こけし娘", "おやつペンギン",
+      "ラムネびん", "商店街のおうち", "お祭りピコ", "猫ヒーロー"
+    ];
+
+    const SETTINGS = {
+      easy: { cols: 3, pairs: 6, seconds: null, key: "showaMenkoBestEasy" },
+      normal: { cols: 4, pairs: 8, seconds: 90, key: "showaMenkoBestNormal" },
+      hard: { cols: 4, pairs: 12, seconds: 120, key: "showaMenkoBestHard" }
+    };
+
+    let difficulty = "normal";
+    let deck = [];
+    let firstCard = null;
+    let secondCard = null;
+    let locked = false;
+    let running = false;
+    let score = 0;
+    let moves = 0;
+    let streak = 0;
+    let matchedPairs = 0;
+    let remainingSeconds = 90;
+    let startedAt = 0;
+    let endTime = 0;
+    let timerId = null;
+    let noticeTimer = null;
+    let itemState = { peek: 1, hint: 1, time: 1 };
+    let audioCtx = null;
+    let masterGain = null;
+    let soundEnabled = true;
+
+    function initAudio() {
+      try {
+        const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+        if (!AudioContextClass) return;
+        if (!audioCtx) {
+          audioCtx = new AudioContextClass();
+          masterGain = audioCtx.createGain();
+          masterGain.gain.value = 0.08;
+          masterGain.connect(audioCtx.destination);
+        }
+        if (audioCtx.state === "suspended") audioCtx.resume();
+      } catch (error) {
+        // 音が使えない環境でもゲームは続行
+      }
+    }
+
+    function tone(freq, duration, delay = 0, type = "square", volume = 0.04) {
+      if (!soundEnabled) return;
+      try {
+        initAudio();
+        if (!audioCtx || !masterGain) return;
+        const start = audioCtx.currentTime + delay;
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = type;
+        osc.frequency.setValueAtTime(freq, start);
+        gain.gain.setValueAtTime(volume, start);
+        gain.gain.exponentialRampToValueAtTime(0.001, start + duration);
+        osc.connect(gain);
+        gain.connect(masterGain);
+        osc.start(start);
+        osc.stop(start + duration);
+      } catch (error) {
+        // 効果音の失敗はゲームに影響させない
+      }
+    }
+
+    function playSound(name) {
+      if (name === "flip") tone(260, 0.04);
+      if (name === "match") {
+        tone(430, 0.08);
+        tone(620, 0.1, 0.07);
+      }
+      if (name === "wrong") {
+        tone(230, 0.08, 0, "triangle");
+        tone(180, 0.09, 0.07, "triangle");
+      }
+      if (name === "streak") {
+        tone(520, 0.07);
+        tone(700, 0.07, 0.06);
+        tone(880, 0.11, 0.12);
+      }
+      if (name === "item") {
+        tone(560, 0.06);
+        tone(760, 0.1, 0.06);
+      }
+      if (name === "start") {
+        tone(330, 0.07);
+        tone(500, 0.08, 0.07);
+        tone(660, 0.1, 0.14);
+      }
+      if (name === "clear") {
+        [440, 560, 680, 880].forEach((freq, index) => tone(freq, 0.16, index * 0.1));
+      }
+      if (name === "timeout") {
+        tone(260, 0.12, 0, "sawtooth");
+        tone(180, 0.2, 0.12, "sawtooth");
+      }
+    }
+
+    function shuffle(items) {
+      for (let i = items.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [items[i], items[j]] = [items[j], items[i]];
+      }
+      return items;
+    }
+
+    function getBest(level = difficulty) {
+      const fallback = { score: 0, moves: 0, fastest: 0 };
+      try {
+        return { ...fallback, ...JSON.parse(localStorage.getItem(SETTINGS[level].key) || "{}") };
+      } catch (error) {
+        return fallback;
+      }
+    }
+
+    function saveBest(result) {
+      try {
+        localStorage.setItem(SETTINGS[difficulty].key, JSON.stringify(result));
+      } catch (error) {
+        // 保存不可でもゲームは続行
+      }
+    }
+
+    function createDeck() {
+      const pairCount = SETTINGS[difficulty].pairs;
+      const ids = Array.from({ length: pairCount }, (_, index) => index);
+      return shuffle([...ids, ...ids]).map((symbol, index) => ({
+        id: index,
+        symbol,
+        matched: false
+      }));
+    }
+
+    function renderBoard() {
+      boardEl.innerHTML = "";
+      boardEl.style.setProperty("--cols", SETTINGS[difficulty].cols);
+      boardEl.className = `board ${difficulty}`;
+
+      deck.forEach((cardData, index) => {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = "menko-card";
+        button.dataset.index = String(index);
+        button.setAttribute("aria-label", `${index + 1}枚目の裏向きメンコ`);
+        button.innerHTML = `
+          <span class="card-inner">
+            <span class="card-face back">
+              <img src="../images/menko/menko-back.webp" alt="">
+            </span>
+            <span class="card-face front">
+              <img src="../images/menko/menko-${String(cardData.symbol + 1).padStart(2, "0")}.webp" alt="${MENKO_NAMES[cardData.symbol]}">
+            </span>
+          </span>
+        `;
+        button.addEventListener("pointerdown", initAudio);
+        button.addEventListener("click", () => selectCard(button, cardData));
+        boardEl.appendChild(button);
+      });
+    }
+
+    function selectCard(cardEl, cardData) {
+      if (!running || locked || cardData.matched || cardEl.classList.contains("flipped")) return;
+
+      playSound("flip");
+      cardEl.classList.add("flipped");
+      cardEl.setAttribute("aria-label", MENKO_NAMES[cardData.symbol]);
+
+      if (!firstCard) {
+        firstCard = { el: cardEl, data: cardData };
+        return;
+      }
+
+      secondCard = { el: cardEl, data: cardData };
+      moves++;
+      locked = true;
+      updateHud();
+
+      if (firstCard.data.symbol === secondCard.data.symbol) {
+        window.setTimeout(resolveMatch, 360);
+      } else {
+        window.setTimeout(resolveWrong, 700);
+      }
+    }
+
+    function resolveMatch() {
+      if (!running) {
+        clearSelection();
+        return;
+      }
+      if (!firstCard || !secondCard) return;
+      firstCard.data.matched = true;
+      secondCard.data.matched = true;
+      firstCard.el.classList.add("matched");
+      secondCard.el.classList.add("matched");
+      matchedPairs++;
+      streak++;
+
+      const bonus = streak === 2 ? 50 : streak >= 3 ? 100 : 0;
+      const gained = 100 + bonus;
+      score += gained;
+
+      const rectA = firstCard.el.getBoundingClientRect();
+      const rectB = secondCard.el.getBoundingClientRect();
+      const tableRect = tableEl.getBoundingClientRect();
+      addPopup(
+        (rectA.left + rectA.right + rectB.left + rectB.right) / 4 - tableRect.left,
+        (rectA.top + rectB.top) / 2 - tableRect.top,
+        `+${gained}`
+      );
+
+      showNotice(bonus ? `そろった！ 連続正解 +${gained}` : "そろった！");
+      playSound(bonus ? "streak" : "match");
+      clearSelection();
+      updateHud();
+
+      if (matchedPairs === SETTINGS[difficulty].pairs) {
+        window.setTimeout(finishClear, 520);
+      }
+    }
+
+    function resolveWrong() {
+      if (!running) {
+        clearSelection();
+        return;
+      }
+      if (!firstCard || !secondCard) return;
+      firstCard.el.classList.add("wrong");
+      secondCard.el.classList.add("wrong");
+      firstCard.el.classList.remove("flipped");
+      secondCard.el.classList.remove("flipped");
+      firstCard.el.setAttribute("aria-label", "裏向きメンコ");
+      secondCard.el.setAttribute("aria-label", "裏向きメンコ");
+      streak = 0;
+
+      if (difficulty === "hard") {
+        endTime -= 2000;
+        showNotice("ちがうメンコだ　残り時間 -2秒");
+      } else {
+        showNotice("ちがうメンコだ");
+      }
+
+      playSound("wrong");
+      window.setTimeout(() => {
+        if (firstCard) firstCard.el.classList.remove("wrong");
+        if (secondCard) secondCard.el.classList.remove("wrong");
+        clearSelection();
+      }, 320);
+      updateTimer();
+      updateHud();
+    }
+
+    function clearSelection() {
+      firstCard = null;
+      secondCard = null;
+      locked = false;
+    }
+
+    function startGame() {
+      initAudio();
+      stopTimer();
+      difficulty = difficultySelect.value;
+      deck = createDeck();
+      firstCard = null;
+      secondCard = null;
+      locked = false;
+      running = true;
+      score = 0;
+      moves = 0;
+      streak = 0;
+      matchedPairs = 0;
+      startedAt = Date.now();
+      remainingSeconds = SETTINGS[difficulty].seconds;
+      endTime = remainingSeconds === null ? 0 : Date.now() + remainingSeconds * 1000;
+      itemState = { peek: 1, hint: 1, time: 1 };
+
+      difficultySelect.disabled = true;
+      overlay.classList.add("hidden");
+      townLink.hidden = true;
+      dialogStartBtn.textContent = "もう一度遊ぶ";
+      renderBoard();
+      updateItems();
+      updateHud();
+      showNotice("メンコ集め、はじめ！");
+      playSound("start");
+
+      if (remainingSeconds !== null) {
+        timerId = window.setInterval(updateTimer, 200);
+      }
+    }
+
+    function stopTimer() {
+      if (timerId) window.clearInterval(timerId);
+      timerId = null;
+    }
+
+    function updateTimer() {
+      if (!running || SETTINGS[difficulty].seconds === null) return;
+      remainingSeconds = Math.max(0, Math.ceil((endTime - Date.now()) / 1000));
+      timeEl.textContent = remainingSeconds;
+      if (remainingSeconds <= 0) finishTimeout();
+    }
+
+    function finishClear() {
+      if (!running) return;
+      running = false;
+      locked = true;
+      stopTimer();
+
+      const elapsed = Math.max(1, Math.round((Date.now() - startedAt) / 1000));
+      const timeBonus = SETTINGS[difficulty].seconds === null ? 0 : remainingSeconds * 10;
+      const moveBonus = Math.max(0, (SETTINGS[difficulty].pairs * 2 - moves) * 20);
+      score += timeBonus + moveBonus;
+
+      const previous = getBest();
+      const isRecord = score > previous.score;
+      const nextBest = {
+        score: Math.max(previous.score, score),
+        moves: previous.moves === 0 ? moves : Math.min(previous.moves, moves),
+        fastest: previous.fastest === 0 ? elapsed : Math.min(previous.fastest, elapsed)
+      };
+      saveBest(nextBest);
+      updateHud();
+      launchConfetti();
+      playSound("clear");
+
+      dialogTitle.textContent = "全メンコ獲得！";
+      dialogBody.innerHTML = `
+        ${isRecord ? '<p class="new-record">新記録！</p>' : ""}
+        <div class="dialog-stats">
+          <span>今回 ${score}点</span>
+          <span>手数 ${moves}</span>
+          <span>時間 ${elapsed}秒</span>
+          <span>最高 ${nextBest.score}点</span>
+        </div>
+        <p>時間ボーナス ${timeBonus}点<br>手数ボーナス ${moveBonus}点</p>
+      `;
+      showEndPanel();
+    }
+
+    function finishTimeout() {
+      if (!running) return;
+      running = false;
+      locked = true;
+      remainingSeconds = 0;
+      stopTimer();
+      updateHud();
+      playSound("timeout");
+      dialogTitle.textContent = "時間切れ";
+      dialogBody.innerHTML = `
+        <div class="dialog-stats">
+          <span>今回 ${score}点</span>
+          <span>手数 ${moves}</span>
+          <span>獲得 ${matchedPairs}組</span>
+          <span>最高 ${getBest().score}点</span>
+        </div>
+        <p>もう一度、全部のメンコ獲得を目指そう。</p>
+      `;
+      showEndPanel();
+    }
+
+    function showEndPanel() {
+      difficultySelect.disabled = false;
+      dialogStartBtn.textContent = "もう一度遊ぶ";
+      townLink.hidden = false;
+      overlay.classList.remove("hidden");
+    }
+
+    function usePeek() {
+      initAudio();
+      if (!canUseItem("peek")) return;
+      itemState.peek = 0;
+      locked = true;
+      const cards = [...boardEl.querySelectorAll(".menko-card")];
+      cards.forEach((card, index) => {
+        if (!deck[index].matched) card.classList.add("flipped");
+      });
+      updateItems();
+      showNotice("ちら見札！ 1秒だけ全部見えるよ");
+      playSound("item");
+      window.setTimeout(() => {
+        cards.forEach((card, index) => {
+          const selected = firstCard && firstCard.el === card;
+          if (!deck[index].matched && !selected) card.classList.remove("flipped");
+        });
+        if (running) locked = false;
+      }, 1000);
+    }
+
+    function useHint() {
+      initAudio();
+      if (!canUseItem("hint")) return;
+      const groups = new Map();
+      deck.forEach((card, index) => {
+        if (card.matched) return;
+        if (!groups.has(card.symbol)) groups.set(card.symbol, []);
+        groups.get(card.symbol).push(index);
+      });
+      const pair = [...groups.values()].find(indices => indices.length >= 2);
+      if (!pair) return;
+      itemState.hint = 0;
+      pair.slice(0, 2).forEach(index => boardEl.children[index].classList.add("hint"));
+      updateItems();
+      showNotice("一組発見札！ 光る2枚を覚えよう");
+      playSound("item");
+      window.setTimeout(() => {
+        pair.slice(0, 2).forEach(index => boardEl.children[index].classList.remove("hint"));
+      }, 2300);
+    }
+
+    function useTime() {
+      initAudio();
+      if (!canUseItem("time") || SETTINGS[difficulty].seconds === null) return;
+      itemState.time = 0;
+      endTime += 10000;
+      updateTimer();
+      updateItems();
+      showNotice("時間延長札！ 残り時間 +10秒");
+      playSound("item");
+    }
+
+    function canUseItem(name) {
+      return running && !locked && itemState[name] > 0;
+    }
+
+    function updateItems() {
+      peekBtn.textContent = `ちら見札 ${itemState.peek}`;
+      hintBtn.textContent = `一組発見札 ${itemState.hint}`;
+      timeBtn.textContent = `時間＋10秒 ${itemState.time}`;
+      peekBtn.disabled = !running || itemState.peek === 0;
+      hintBtn.disabled = !running || itemState.hint === 0;
+      timeBtn.disabled = !running || difficulty === "easy" || itemState.time === 0;
+    }
+
+    function updateHud() {
+      const setting = SETTINGS[difficulty];
+      scoreEl.textContent = score;
+      highScoreEl.textContent = getBest().score;
+      movesEl.textContent = moves;
+      timeEl.textContent = setting.seconds === null ? "なし" : remainingSeconds;
+      streakEl.textContent = streak;
+      pairsEl.textContent = `${matchedPairs} / ${setting.pairs}`;
+    }
+
+    function showNotice(message) {
+      noticeEl.textContent = message;
+      noticeEl.classList.add("show");
+      window.clearTimeout(noticeTimer);
+      noticeTimer = window.setTimeout(() => noticeEl.classList.remove("show"), 1400);
+    }
+
+    function addPopup(x, y, text) {
+      const popup = document.createElement("span");
+      popup.className = "score-popup";
+      popup.textContent = text;
+      popup.style.left = `${x}px`;
+      popup.style.top = `${y}px`;
+      popupLayer.appendChild(popup);
+      popup.addEventListener("animationend", () => popup.remove());
+    }
+
+    function launchConfetti() {
+      confettiEl.innerHTML = "";
+      const colors = ["#f4c84d", "#d94a32", "#4f9d72", "#3685a7", "#fff0bd"];
+      for (let i = 0; i < 32; i++) {
+        const piece = document.createElement("i");
+        piece.style.left = `${Math.random() * 100}%`;
+        piece.style.setProperty("--color", colors[i % colors.length]);
+        piece.style.setProperty("--duration", `${1.6 + Math.random() * 1.5}s`);
+        piece.style.setProperty("--drift", `${-70 + Math.random() * 140}px`);
+        piece.style.animationDelay = `${Math.random() * 0.45}s`;
+        confettiEl.appendChild(piece);
+      }
+      window.setTimeout(() => confettiEl.replaceChildren(), 3600);
+    }
+
+    soundBtn.addEventListener("pointerdown", initAudio);
+    soundBtn.addEventListener("click", () => {
+      soundEnabled = !soundEnabled;
+      soundBtn.textContent = soundEnabled ? "音 ON" : "音 OFF";
+      if (soundEnabled) {
+        initAudio();
+        tone(540, 0.07);
+      }
+    });
+
+    startBtn.addEventListener("pointerdown", initAudio);
+    startBtn.addEventListener("click", startGame);
+    restartBtn.addEventListener("pointerdown", initAudio);
+    restartBtn.addEventListener("click", startGame);
+    dialogStartBtn.addEventListener("pointerdown", initAudio);
+    dialogStartBtn.addEventListener("click", startGame);
+    peekBtn.addEventListener("click", usePeek);
+    hintBtn.addEventListener("click", useHint);
+    timeBtn.addEventListener("click", useTime);
+
+    function changeDifficulty(value) {
+      if (running) return;
+      difficultySelect.value = value;
+      dialogDifficultySelect.value = value;
+      difficulty = value;
+      deck = createDeck();
+      remainingSeconds = SETTINGS[difficulty].seconds;
+      renderBoard();
+      updateHud();
+      updateItems();
+    }
+
+    difficultySelect.addEventListener("change", () => changeDifficulty(difficultySelect.value));
+    dialogDifficultySelect.addEventListener("change", () => changeDifficulty(dialogDifficultySelect.value));
+
+    difficulty = difficultySelect.value;
+    deck = createDeck();
+    remainingSeconds = SETTINGS[difficulty].seconds;
+    renderBoard();
+    updateHud();
+    updateItems();
+  </script>
+</body>
+</html>
