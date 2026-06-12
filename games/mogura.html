@@ -3,14 +3,17 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
   <title>ピコピコもぐら横丁</title>
-  <link rel="icon" type="image/svg+xml" href="../images/favicon.svg">
-  <link rel="preload" as="image" href="../images/mogura/mogura-normal.webp">
-  <link rel="preload" as="image" href="../images/mogura/mogura-cat.webp">
-  <link rel="preload" as="image" href="../images/mogura/mogura-gold.webp">
-  <link rel="preload" as="image" href="../images/mogura/item-clock.webp">
-  <link rel="preload" as="image" href="../images/mogura/item-double.webp">
-  <link rel="preload" as="image" href="../images/mogura/item-hammer.webp">
+  <link rel="icon" type="image/svg+xml" href="../images/favicon.svg?v=20260612-1">
+  <link rel="preload" as="image" href="../images/mogura/mogura-normal.webp?v=20260612-1">
+  <link rel="preload" as="image" href="../images/mogura/mogura-cat.webp?v=20260612-1">
+  <link rel="preload" as="image" href="../images/mogura/mogura-gold.webp?v=20260612-1">
+  <link rel="preload" as="image" href="../images/mogura/item-clock.webp?v=20260612-1">
+  <link rel="preload" as="image" href="../images/mogura/item-double.webp?v=20260612-1">
+  <link rel="preload" as="image" href="../images/mogura/item-hammer.webp?v=20260612-1">
   <style>
     * {
       box-sizing: border-box;
@@ -235,12 +238,15 @@
       display: grid;
       place-items: end center;
       transform: translate(-50%, 108%);
+      -webkit-transform: translate(-50%, 108%);
       transition: transform 0.18s cubic-bezier(0.2, 0.85, 0.3, 1.08);
+      -webkit-transition: -webkit-transform 0.18s cubic-bezier(0.2, 0.85, 0.3, 1.08);
       pointer-events: none;
     }
 
     .hole.active .creature {
       transform: translate(-50%, 3%);
+      -webkit-transform: translate(-50%, 3%);
       pointer-events: auto;
     }
 
@@ -255,6 +261,68 @@
       filter: drop-shadow(0 4px 2px rgba(33, 13, 7, 0.48));
       pointer-events: none;
       -webkit-user-drag: none;
+    }
+
+    .creature.image-failed .creature-image {
+      display: none;
+    }
+
+    .creature.image-failed::before {
+      content: "ピコ";
+      display: grid;
+      width: 76%;
+      aspect-ratio: 1;
+      place-items: center;
+      margin: auto auto 4%;
+      color: #fff0bd;
+      background: #a9472d;
+      border: 5px solid #32170e;
+      border-radius: 48% 48% 42% 42%;
+      box-shadow: inset 0 -10px rgba(92, 35, 21, 0.2);
+      font-size: clamp(12px, 3vw, 24px);
+      font-weight: 900;
+      line-height: 1;
+      text-shadow: 1px 1px #32170e;
+    }
+
+    .creature.image-failed.cat::before {
+      content: "ねこ";
+      color: #5b2719;
+      background: #fff0c4;
+      border-radius: 38% 38% 48% 48%;
+      box-shadow: inset 18px 0 #e5a44f, inset -18px 0 #e5a44f;
+      text-shadow: none;
+    }
+
+    .creature.image-failed.golden::before {
+      content: "★";
+      color: #6b330d;
+      background: #ffd83f;
+      border-color: #7a3b11;
+      box-shadow: 0 0 14px #ffe75d, inset 0 -10px #e9a81f;
+      font-size: clamp(24px, 7vw, 52px);
+    }
+
+    .creature.image-failed.clock::before {
+      content: "時計";
+      color: #3c2417;
+      background: #8bd5d0;
+      border-color: #315a5b;
+    }
+
+    .creature.image-failed.double::before {
+      content: "×2";
+      color: #4d1d14;
+      background: #ffe16a;
+      border-color: #8a3b20;
+      font-size: clamp(20px, 6vw, 44px);
+    }
+
+    .creature.image-failed.hammer::before {
+      content: "＋10";
+      color: #fff1bd;
+      background: #dc5a38;
+      border-color: #5c2718;
     }
 
     .hole.active .creature-image {
@@ -611,6 +679,17 @@
   </main>
 
   <script>
+    if (!Promise.allSettled) {
+      Promise.allSettled = function (promises) {
+        return Promise.all(Array.from(promises).map((promise) =>
+          Promise.resolve(promise).then(
+            (value) => ({ status: "fulfilled", value }),
+            (reason) => ({ status: "rejected", reason })
+          )
+        ));
+      };
+    }
+
     const boardEl = document.getElementById("board");
     const boardWrapEl = document.getElementById("boardWrap");
     const popupLayerEl = document.getElementById("popupLayer");
@@ -635,15 +714,37 @@
 
     const HIGH_SCORE_KEY = "showa-retro-mogura-high-score";
     const GAME_DURATION = 60;
+    const ASSET_VERSION = "20260612-1";
     const ITEM_TYPES = ["clock", "double", "hammer"];
-    const targetImages = {
-      pico: "../images/mogura/mogura-normal.webp",
-      "cat-pico": "../images/mogura/mogura-normal.webp",
-      golden: "../images/mogura/mogura-gold.webp",
-      cat: "../images/mogura/mogura-cat.webp",
-      clock: "../images/mogura/item-clock.webp",
-      double: "../images/mogura/item-double.webp",
-      hammer: "../images/mogura/item-hammer.webp"
+    const targetImageSources = {
+      pico: {
+        webp: `../images/mogura/mogura-normal.webp?v=${ASSET_VERSION}`,
+        png: `../images/mogura/mogura-normal.png?v=${ASSET_VERSION}`
+      },
+      "cat-pico": {
+        webp: `../images/mogura/mogura-normal.webp?v=${ASSET_VERSION}`,
+        png: `../images/mogura/mogura-normal.png?v=${ASSET_VERSION}`
+      },
+      golden: {
+        webp: `../images/mogura/mogura-gold.webp?v=${ASSET_VERSION}`,
+        png: `../images/mogura/mogura-gold.png?v=${ASSET_VERSION}`
+      },
+      cat: {
+        webp: `../images/mogura/mogura-cat.webp?v=${ASSET_VERSION}`,
+        png: `../images/mogura/mogura-cat.png?v=${ASSET_VERSION}`
+      },
+      clock: {
+        webp: `../images/mogura/item-clock.webp?v=${ASSET_VERSION}`,
+        png: `../images/mogura/item-clock.png?v=${ASSET_VERSION}`
+      },
+      double: {
+        webp: `../images/mogura/item-double.webp?v=${ASSET_VERSION}`,
+        png: `../images/mogura/item-double.png?v=${ASSET_VERSION}`
+      },
+      hammer: {
+        webp: `../images/mogura/item-hammer.webp?v=${ASSET_VERSION}`,
+        png: `../images/mogura/item-hammer.png?v=${ASSET_VERSION}`
+      }
     };
     const difficultySettings = {
       easy: { minLife: 900, maxLife: 1300, maxActive: 1, spawnMin: 520, spawnMax: 850 },
@@ -669,6 +770,8 @@
     let audioCtx = null;
     let masterGain = null;
     let soundEnabled = true;
+    let assetLoadPromise = null;
+    const targetImageChoice = new Map();
 
     function loadHighScore() {
       try {
@@ -709,6 +812,8 @@
         image.className = "creature-image";
         image.alt = "";
         image.draggable = false;
+        image.decoding = "async";
+        image.addEventListener("error", () => handleTargetImageError(index));
         creature.appendChild(image);
         popSlot.appendChild(creature);
 
@@ -722,6 +827,75 @@
         boardEl.appendChild(hole);
         holes.push({ hole, creature });
       }
+
+      syncBoardSize();
+    }
+
+    function syncBoardSize() {
+      const width = boardEl.getBoundingClientRect().width;
+      if (width > 0) boardEl.style.height = `${Math.round(width)}px`;
+    }
+
+    function preloadImage(url) {
+      return new Promise((resolve, reject) => {
+        const image = new Image();
+        const timeoutId = window.setTimeout(() => {
+          image.onload = null;
+          image.onerror = null;
+          reject(new Error(`Image load timed out: ${url}`));
+        }, 4000);
+        image.onload = () => {
+          window.clearTimeout(timeoutId);
+          resolve(url);
+        };
+        image.onerror = () => {
+          window.clearTimeout(timeoutId);
+          reject(new Error(`Image load failed: ${url}`));
+        };
+        image.src = url;
+      });
+    }
+
+    function preloadTargetImages() {
+      if (assetLoadPromise) return assetLoadPromise;
+
+      const entries = Object.entries(targetImageSources);
+      assetLoadPromise = Promise.allSettled(entries.map(async ([type, sources]) => {
+        const results = await Promise.allSettled([
+          preloadImage(sources.webp),
+          preloadImage(sources.png)
+        ]);
+
+        if (results[0].status === "fulfilled") {
+          targetImageChoice.set(type, { url: sources.webp, format: "webp" });
+        } else if (results[1].status === "fulfilled") {
+          targetImageChoice.set(type, { url: sources.png, format: "png" });
+        } else {
+          targetImageChoice.set(type, { url: "", format: "css" });
+        }
+      }));
+
+      return assetLoadPromise;
+    }
+
+    function handleTargetImageError(holeIndex) {
+      const entry = holes[holeIndex];
+      const target = activeTargets.get(holeIndex);
+      if (!entry || !target) return;
+
+      const image = entry.creature.querySelector(".creature-image");
+      const sources = targetImageSources[target.type];
+      const currentChoice = targetImageChoice.get(target.type);
+
+      if (currentChoice && currentChoice.format === "webp" && sources && sources.png) {
+        targetImageChoice.set(target.type, { url: sources.png, format: "png" });
+        image.src = sources.png;
+        return;
+      }
+
+      targetImageChoice.set(target.type, { url: "", format: "css" });
+      image.removeAttribute("src");
+      entry.creature.classList.add("image-failed");
     }
 
     function initAudio() {
@@ -793,8 +967,9 @@
       }
     }
 
-    function startGame() {
+    async function startGame() {
       initAudio();
+      await preloadTargetImages();
       cancelAnimationFrame(animationId);
       clearAllTargets();
       popupLayerEl.innerHTML = "";
@@ -932,7 +1107,15 @@
       if (ITEM_TYPES.includes(type)) creature.classList.add("item", type);
 
       const image = creature.querySelector(".creature-image");
-      image.src = targetImages[type];
+      const choice = targetImageChoice.get(type);
+      creature.classList.remove("image-failed");
+
+      if (!choice || choice.format === "css" || !choice.url) {
+        image.removeAttribute("src");
+        creature.classList.add("image-failed");
+      } else {
+        image.src = choice.url;
+      }
 
       hole.classList.add("active");
     }
@@ -943,7 +1126,8 @@
       window.setTimeout(() => {
         if (!activeTargets.has(holeIndex)) {
           entry.creature.className = "creature";
-          entry.creature.querySelector(".creature-image").removeAttribute("src");
+          const image = entry.creature.querySelector(".creature-image");
+          image.removeAttribute("src");
         }
       }, 130);
     }
@@ -1125,7 +1309,11 @@
       if (running && event.target.closest(".board-wrap")) event.preventDefault();
     }, { passive: false });
 
+    window.addEventListener("resize", syncBoardSize);
+    window.addEventListener("orientationchange", () => window.setTimeout(syncBoardSize, 120));
+
     createBoard();
+    preloadTargetImages();
     highScoreEl.textContent = highScore;
     updateHud();
   </script>
