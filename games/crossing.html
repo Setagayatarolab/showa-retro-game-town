@@ -1,0 +1,1454 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>商店街おつかい大作戦</title>
+  <link rel="icon" type="image/svg+xml" href="../images/favicon.svg">
+  <style>
+    * {
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+    }
+
+    html,
+    body {
+      margin: 0;
+      min-height: 100%;
+      overscroll-behavior: none;
+    }
+
+    body {
+      min-height: 100vh;
+      overflow-x: hidden;
+      color: #fff4c4;
+      background:
+        radial-gradient(circle at top, rgba(255, 211, 113, 0.3), transparent 34%),
+        linear-gradient(180deg, #b84b32 0%, #713022 40%, #24130d 100%);
+      font-family: "Hiragino Maru Gothic ProN", "Yu Gothic", "Meiryo", system-ui, sans-serif;
+      touch-action: manipulation;
+    }
+
+    button,
+    select {
+      font: inherit;
+      touch-action: manipulation;
+    }
+
+    .page {
+      width: min(900px, calc(100% - 14px));
+      margin: 0 auto;
+      padding: 10px 0 18px;
+    }
+
+    .back-link {
+      display: inline-block;
+      margin-bottom: 5px;
+      color: #fff4c4;
+      text-decoration: none;
+      font-size: 14px;
+      font-weight: 900;
+      text-shadow: 1px 1px 0 #3b1a0a;
+    }
+
+    h1 {
+      margin: 0 0 8px;
+      color: #ffe082;
+      text-align: center;
+      font-size: clamp(25px, 6vw, 42px);
+      text-shadow: 3px 3px 0 #5a2517, 0 0 12px rgba(255, 215, 94, 0.45);
+    }
+
+    .cabinet {
+      padding: 10px;
+      background: #522b18;
+      border: 6px solid #2a160d;
+      border-radius: 8px;
+      box-shadow: 0 10px 0 #170c08, 0 18px 32px rgba(0, 0, 0, 0.4);
+    }
+
+    .hud {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr) auto;
+      gap: 7px;
+      margin-bottom: 8px;
+    }
+
+    .hud-item,
+    .memo,
+    .bag-state {
+      min-width: 0;
+      padding: 7px 5px;
+      color: #2f170b;
+      text-align: center;
+      background: #ffe7a0;
+      border: 2px solid #8b421f;
+      border-radius: 6px;
+      box-shadow: inset 0 -3px 0 rgba(139, 66, 31, 0.18);
+    }
+
+    .hud-item span,
+    .bag-state span {
+      display: block;
+      color: #9a3624;
+      font-size: 10px;
+      font-weight: 900;
+    }
+
+    .hud-item strong,
+    .bag-state strong {
+      display: block;
+      overflow: hidden;
+      font-size: clamp(15px, 3.7vw, 22px);
+      line-height: 1.15;
+      white-space: nowrap;
+    }
+
+    .sound-button {
+      min-width: 74px;
+      color: #2d170b;
+      background: #ffcf4a;
+      border: 2px solid #713415;
+      border-radius: 7px;
+      font-size: 13px;
+      font-weight: 900;
+      cursor: pointer;
+      box-shadow: 0 4px 0 #713415;
+    }
+
+    .subhud {
+      display: grid;
+      grid-template-columns: 1.5fr 1fr;
+      gap: 8px;
+      margin-bottom: 8px;
+    }
+
+    .memo {
+      text-align: left;
+      font-weight: 900;
+    }
+
+    .memo-title {
+      display: block;
+      margin-bottom: 2px;
+      color: #9a3624;
+      font-size: 12px;
+    }
+
+    .memo-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 5px 9px;
+      font-size: 13px;
+    }
+
+    .memo-list span.done {
+      color: #2f7b4a;
+    }
+
+    .notice {
+      min-height: 25px;
+      margin-bottom: 7px;
+      color: #fff4c4;
+      text-align: center;
+      font-weight: 900;
+      opacity: 0;
+      transition: opacity 0.18s ease;
+    }
+
+    .notice.show {
+      opacity: 1;
+    }
+
+    .stage-wrap {
+      width: min(100%, 560px);
+      margin: 0 auto;
+      padding: 7px;
+      background:
+        linear-gradient(rgba(255, 222, 128, 0.08) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 222, 128, 0.08) 1px, transparent 1px),
+        #24130c;
+      background-size: 22px 22px;
+      border: 4px solid #1b0e09;
+      border-radius: 6px;
+      touch-action: none;
+    }
+
+    canvas {
+      display: block;
+      width: 100%;
+      aspect-ratio: 9 / 12;
+      background: #30190f;
+      border: 3px solid #8b421f;
+      border-radius: 4px;
+    }
+
+    .controls {
+      display: grid;
+      grid-template-columns: 1fr auto 1fr;
+      gap: 10px;
+      align-items: center;
+      margin-top: 10px;
+    }
+
+    .dpad {
+      display: grid;
+      grid-template-columns: repeat(3, 58px);
+      grid-template-rows: repeat(3, 48px);
+      gap: 5px;
+      justify-content: center;
+    }
+
+    .pad-button,
+    .game-button {
+      color: #32170d;
+      background: #ffcf4a;
+      border: 2px solid #713415;
+      border-radius: 8px;
+      font-weight: 900;
+      cursor: pointer;
+      box-shadow: 0 4px 0 #713415;
+    }
+
+    .pad-button:active,
+    .game-button:active,
+    .sound-button:active {
+      transform: translateY(3px);
+      box-shadow: 0 1px 0 #713415;
+    }
+
+    .pad-up { grid-column: 2; grid-row: 1; }
+    .pad-left { grid-column: 1; grid-row: 2; }
+    .pad-right { grid-column: 3; grid-row: 2; }
+    .pad-down { grid-column: 2; grid-row: 3; }
+
+    .actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 7px;
+      justify-content: center;
+    }
+
+    .game-button {
+      min-height: 42px;
+      padding: 8px 13px;
+      background: #ffe082;
+    }
+
+    .help {
+      margin: 10px 0 0;
+      color: #ffe9a6;
+      text-align: center;
+      font-size: 13px;
+      line-height: 1.55;
+      text-shadow: 1px 1px 0 #3b1a0a;
+    }
+
+    .overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 20;
+      display: grid;
+      place-items: center;
+      padding: 18px;
+      background: rgba(27, 12, 7, 0.82);
+    }
+
+    .overlay.hidden {
+      display: none;
+    }
+
+    .panel {
+      width: min(470px, 100%);
+      padding: 22px 18px;
+      color: #35180d;
+      text-align: center;
+      background: #ffedb2;
+      border: 5px solid #8b3b20;
+      border-radius: 8px;
+      box-shadow: 0 10px 0 #32170e, 0 18px 32px rgba(0, 0, 0, 0.42);
+    }
+
+    .panel h2 {
+      margin: 0 0 10px;
+      color: #a03926;
+      font-size: clamp(25px, 7vw, 36px);
+    }
+
+    .panel p {
+      margin: 8px 0;
+      line-height: 1.65;
+    }
+
+    .panel-difficulty {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      margin: 12px 0;
+      font-weight: 900;
+    }
+
+    select {
+      min-height: 38px;
+      padding: 5px 10px;
+      color: #35180d;
+      background: #fff7d7;
+      border: 2px solid #8b3b20;
+      border-radius: 6px;
+      font-weight: 900;
+    }
+
+    .panel-stats {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 6px;
+      margin: 12px 0;
+      font-weight: 900;
+    }
+
+    .panel-stats span {
+      padding: 7px;
+      background: #fff7d7;
+      border: 2px solid #c2793f;
+      border-radius: 5px;
+    }
+
+    .panel-actions {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 8px;
+    }
+
+    .panel-actions a {
+      display: inline-grid;
+      min-height: 43px;
+      place-items: center;
+      padding: 8px 14px;
+      color: #3a1a0f;
+      background: #fff5ca;
+      border: 2px solid #713018;
+      border-radius: 6px;
+      font-weight: 900;
+      text-decoration: none;
+    }
+
+    .record {
+      color: #d13925;
+      font-size: 22px;
+      font-weight: 900;
+    }
+
+    @media (max-width: 680px) {
+      .page {
+        width: min(100% - 8px, 820px);
+        padding-top: 6px;
+      }
+
+      .cabinet {
+        padding: 6px;
+        border-width: 4px;
+      }
+
+      .hud {
+        grid-template-columns: repeat(3, 1fr);
+      }
+
+      .subhud {
+        grid-template-columns: 1fr;
+      }
+
+      .stage-wrap {
+        padding: 5px;
+        border-width: 3px;
+      }
+
+      .controls {
+        grid-template-columns: 1fr;
+      }
+
+      .dpad {
+        grid-template-columns: repeat(3, minmax(54px, 64px));
+        grid-template-rows: repeat(3, 44px);
+      }
+    }
+
+    @media (max-width: 380px) {
+      h1 { font-size: 23px; }
+      .hud-item strong,
+      .bag-state strong { font-size: 15px; }
+      .dpad {
+        grid-template-columns: repeat(3, 52px);
+        grid-template-rows: repeat(3, 42px);
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <a class="back-link" href="../index.html">← 昭和レトロゲーム街へ戻る</a>
+    <h1>商店街おつかい大作戦</h1>
+
+    <section class="cabinet" aria-label="商店街おつかい大作戦">
+      <div class="hud">
+        <div class="hud-item"><span>面</span><strong id="level">1</strong></div>
+        <div class="hud-item"><span>得点</span><strong id="score">0</strong></div>
+        <div class="hud-item"><span>最高</span><strong id="highScore">0</strong></div>
+        <div class="hud-item"><span>残機</span><strong id="lives">3</strong></div>
+        <div class="hud-item"><span>残り時間</span><strong id="time">50秒</strong></div>
+        <button class="sound-button" id="soundBtn" type="button">音 ON</button>
+      </div>
+
+      <div class="subhud">
+        <div class="memo">
+          <span class="memo-title">おつかいメモ</span>
+          <div class="memo-list" id="memoList"></div>
+        </div>
+        <div class="bag-state">
+          <span>買い物袋</span>
+          <strong id="bagState">軽い</strong>
+        </div>
+      </div>
+
+      <div class="notice" id="notice" aria-live="polite"></div>
+
+      <div class="stage-wrap">
+        <canvas id="game" width="540" height="720" aria-label="強制スクロールする商店街のゲーム盤"></canvas>
+      </div>
+
+      <div class="controls">
+        <div></div>
+        <div class="dpad" aria-label="スマホ操作">
+          <button class="pad-button pad-up" type="button" data-dir="up">上</button>
+          <button class="pad-button pad-left" type="button" data-dir="left">左</button>
+          <button class="pad-button pad-right" type="button" data-dir="right">右</button>
+          <button class="pad-button pad-down" type="button" data-dir="down">下</button>
+        </div>
+        <div class="actions">
+          <button class="game-button" id="startBtn" type="button">おつかい開始</button>
+          <button class="game-button" id="pauseBtn" type="button">一時停止</button>
+        </div>
+      </div>
+
+      <p class="help">品物を全部集めてから上のお店へ。荷物が増えると少し遅くなります。</p>
+    </section>
+  </main>
+
+  <div class="overlay" id="overlay">
+    <div class="panel">
+      <h2 id="panelTitle">商店街おつかい大作戦</h2>
+      <div id="panelBody">
+        <p>頼まれた品物を全部集めて、閉店前に商店街の向こう側へ届けよう。<br>買い物袋は、品物を入れるほど重くなります。</p>
+      </div>
+      <label class="panel-difficulty" for="difficultySelect">
+        難易度
+        <select id="difficultySelect">
+          <option value="easy">のんびり</option>
+          <option value="normal" selected>ふつう</option>
+          <option value="hard">大混雑</option>
+        </select>
+      </label>
+      <div class="panel-actions">
+        <button class="game-button" id="panelStartBtn" type="button">おつかい開始</button>
+        <a id="townLink" href="../index.html" hidden>ゲーム街へ戻る</a>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const canvas = document.getElementById("game");
+    const ctx = canvas.getContext("2d");
+    const scoreEl = document.getElementById("score");
+    const highScoreEl = document.getElementById("highScore");
+    const livesEl = document.getElementById("lives");
+    const levelEl = document.getElementById("level");
+    const timeEl = document.getElementById("time");
+    const memoListEl = document.getElementById("memoList");
+    const bagStateEl = document.getElementById("bagState");
+    const noticeEl = document.getElementById("notice");
+    const soundBtn = document.getElementById("soundBtn");
+    const startBtn = document.getElementById("startBtn");
+    const pauseBtn = document.getElementById("pauseBtn");
+    const panelStartBtn = document.getElementById("panelStartBtn");
+    const difficultySelect = document.getElementById("difficultySelect");
+    const overlay = document.getElementById("overlay");
+    const panelTitle = document.getElementById("panelTitle");
+    const panelBody = document.getElementById("panelBody");
+    const townLink = document.getElementById("townLink");
+
+    const BASE_W = 540;
+    const BASE_H = 720;
+    const ASSET_VERSION = "3";
+    const SCORE_KEY = "showaShoppingMissionHighScore";
+    const ASSETS = {
+      player: "player.webp",
+      bicycle: "bicycle.webp",
+      scooter: "scooter.webp",
+      shopper: "shopper.webp",
+      clerk: "clerk.webp",
+      cart: "cart.webp",
+      cat: "cat.webp",
+      ramuneObstacle: "ramune.webp",
+      ramune: "item-ramune.webp",
+      bread: "item-bread.webp",
+      catcan: "item-catcan.webp",
+      milk: "item-milk.webp",
+      senbei: "item-senbei.webp",
+      croquette: "item-croquette.webp",
+      goldCatcan: "item-gold-catcan.webp",
+      charm: "charm.webp",
+      lightBag: "light-bag.webp",
+      clock: "clock.webp",
+      ticket: "ticket.webp"
+    };
+    const assetImages = {};
+    const failedAssets = new Set();
+    const assetUrls = Object.fromEntries(
+      Object.entries(ASSETS).map(([key, file]) => [key, `../images/crossing/${file}?v=${ASSET_VERSION}`])
+    );
+
+    const PRODUCT_LABELS = {
+      ramune: "ラムネ",
+      bread: "食パン",
+      catcan: "猫缶",
+      milk: "牛乳",
+      senbei: "せんべい",
+      croquette: "コロッケ",
+      goldCatcan: "金の猫缶"
+    };
+
+    const LEVELS = [
+      {
+        title: "夕方のおつかい",
+        goal: "駄菓子屋",
+        length: 2300,
+        time: 50,
+        scroll: 28,
+        products: ["ramune", "bread", "catcan"],
+        obstacles: ["bicycle", "shopper", "cat"],
+        obstacleCount: 8,
+        itemCount: 3
+      },
+      {
+        title: "買い物ラッシュ",
+        goal: "純喫茶",
+        length: 2700,
+        time: 55,
+        scroll: 36,
+        products: ["milk", "senbei", "croquette", "catcan"],
+        obstacles: ["bicycle", "scooter", "shopper", "cart", "ramuneObstacle"],
+        obstacleCount: 12,
+        itemCount: 4
+      },
+      {
+        title: "閉店前の大混雑",
+        goal: "ゲームコーナー",
+        length: 3100,
+        time: 60,
+        scroll: 44,
+        products: ["milk", "bread", "ramune", "croquette", "goldCatcan"],
+        obstacles: ["bicycle", "scooter", "shopper", "cart", "ramuneObstacle", "clerk"],
+        obstacleCount: 17,
+        itemCount: 5
+      }
+    ];
+
+    const DIFFICULTY = {
+      easy: { label: "のんびり", obstacle: 0.78, speed: 0.86, lives: 4, timeBonus: 10, score: 1 },
+      normal: { label: "ふつう", obstacle: 1, speed: 1, lives: 3, timeBonus: 0, score: 1 },
+      hard: { label: "大混雑", obstacle: 1.28, speed: 1.18, lives: 2, timeBonus: 0, score: 1.5 }
+    };
+
+    const keys = { up: false, down: false, left: false, right: false };
+    const GOAL_RECT = { x: 58, y: 62, w: 424, h: 86 };
+    let player;
+    let products = [];
+    let items = [];
+    let obstacles = [];
+    let popups = [];
+    let level = 1;
+    let difficulty = "normal";
+    let lives = 3;
+    let score = 0;
+    let highScore = loadHighScore();
+    let running = false;
+    let paused = false;
+    let gameEnded = false;
+    let scrollY = 0;
+    let lastTime = 0;
+    let endAt = 0;
+    let remainingTime = 50;
+    let animationId = null;
+    let invincibleUntil = 0;
+    let stoppedUntil = 0;
+    let lightBagUntil = 0;
+    let speedBoostUntil = 0;
+    let charm = 0;
+    let missesThisLevel = 0;
+    let nearMissStreak = 0;
+    let maxNearMissStreak = 0;
+    let totalNearMiss = 0;
+    let warnedLowTime = false;
+    let noticeTimer = null;
+    let audioCtx = null;
+    let masterGain = null;
+    let soundEnabled = true;
+    let assetLoadPromise = null;
+    let panelAction = "start";
+    let goalReadyNoticeShown = false;
+
+    function loadHighScore() {
+      try {
+        return Number(localStorage.getItem(SCORE_KEY)) || 0;
+      } catch (error) {
+        return 0;
+      }
+    }
+
+    function saveHighScore(value) {
+      try {
+        localStorage.setItem(SCORE_KEY, String(value));
+      } catch (error) {
+        // 保存できない環境でもゲームは続行
+      }
+    }
+
+    function initAudio() {
+      try {
+        const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+        if (!AudioContextClass) return;
+        if (!audioCtx) {
+          audioCtx = new AudioContextClass();
+          masterGain = audioCtx.createGain();
+          masterGain.gain.value = 0.08;
+          masterGain.connect(audioCtx.destination);
+        }
+        if (audioCtx.state === "suspended") audioCtx.resume();
+      } catch (error) {
+        // 音が使えない環境でもゲームは続行
+      }
+    }
+
+    function tone(freq, duration, type = "square", volume = 0.04, delay = 0) {
+      if (!soundEnabled) return;
+      try {
+        initAudio();
+        if (!audioCtx || !masterGain) return;
+        const now = audioCtx.currentTime + delay;
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = type;
+        osc.frequency.setValueAtTime(freq, now);
+        gain.gain.setValueAtTime(volume, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + duration);
+        osc.connect(gain);
+        gain.connect(masterGain);
+        osc.start(now);
+        osc.stop(now + duration);
+      } catch (error) {
+        // 効果音の失敗はゲームに影響させない
+      }
+    }
+
+    function playSound(name) {
+      if (name === "item") [520, 760].forEach((f, i) => tone(f, 0.07, "triangle", 0.035, i * 0.06));
+      if (name === "bell") [1000, 1320].forEach((f, i) => tone(f, 0.04, "sine", 0.022, i * 0.05));
+      if (name === "hit") tone(145, 0.16, "sawtooth", 0.035);
+      if (name === "near") [760, 980].forEach((f, i) => tone(f, 0.05, "square", 0.025, i * 0.04));
+      if (name === "cat") tone(260, 0.08, "triangle", 0.025);
+      if (name === "clear") [440, 620, 820].forEach((f, i) => tone(f, 0.12, "square", 0.035, i * 0.09));
+      if (name === "allclear") [520, 650, 780, 1040].forEach((f, i) => tone(f, 0.16, "triangle", 0.04, i * 0.11));
+      if (name === "over") [260, 190, 130].forEach((f, i) => tone(f, 0.14, "sawtooth", 0.03, i * 0.12));
+      if (name === "warn") tone(980, 0.08, "square", 0.025);
+      if (name === "start") [330, 520, 700].forEach((f, i) => tone(f, 0.08, "square", 0.035, i * 0.07));
+    }
+
+    function preloadAssets() {
+      if (assetLoadPromise) return assetLoadPromise;
+      assetLoadPromise = Promise.allSettled(Object.entries(assetUrls).map(([key, src]) => new Promise((resolve) => {
+        const img = new Image();
+        img.onload = () => {
+          assetImages[key] = img;
+          resolve();
+        };
+        img.onerror = () => {
+          failedAssets.add(key);
+          resolve();
+        };
+        img.src = src;
+      })));
+      return assetLoadPromise;
+    }
+
+    function resizeCanvas() {
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      canvas.width = 540 * dpr;
+      canvas.height = 720 * dpr;
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      draw();
+    }
+
+    function startGame() {
+      initAudio();
+      preloadAssets().then(() => {
+        cancelAnimationFrame(animationId);
+        difficulty = difficultySelect.value;
+        lives = DIFFICULTY[difficulty].lives;
+        score = 0;
+        level = 1;
+        totalNearMiss = 0;
+        maxNearMissStreak = 0;
+      gameEnded = false;
+      panelAction = "start";
+      townLink.hidden = true;
+        overlay.classList.add("hidden");
+        startLevel();
+        playSound("start");
+      });
+    }
+
+    function startLevel() {
+      const config = LEVELS[level - 1];
+      scrollY = 0;
+      missesThisLevel = 0;
+      nearMissStreak = 0;
+      warnedLowTime = false;
+      goalReadyNoticeShown = false;
+      products = createProducts(config);
+      items = createItems(config);
+      obstacles = createObstacles(config);
+      popups = [];
+      player = {
+        x: 270 - 22,
+        y: 620,
+        w: 44,
+        h: 54,
+        speed: 215,
+        collected: 0
+      };
+      running = true;
+      paused = false;
+      endAt = performance.now() + (config.time + DIFFICULTY[difficulty].timeBonus) * 1000;
+      remainingTime = config.time + DIFFICULTY[difficulty].timeBonus;
+      invincibleUntil = performance.now() + 1200;
+      stoppedUntil = 0;
+      lightBagUntil = 0;
+      speedBoostUntil = 0;
+      charm = 0;
+      lastTime = performance.now();
+      pauseBtn.textContent = "一時停止";
+      showNotice(`${config.title}　${config.products.length}品集めよう`);
+      updateHud();
+      animationId = requestAnimationFrame(loop);
+    }
+
+    function createProducts(config) {
+      const points = config.products.map((type, i) => ({
+        type,
+        x: 72 + (i % 3) * 190 + Math.random() * 26,
+        y: 330 + i * (config.length / (config.products.length + 1)) + Math.random() * 90,
+        w: 42,
+        h: 42,
+        taken: false
+      }));
+      return points;
+    }
+
+    function createItems(config) {
+      const types = ["charm", "lightBag", "clock", "ticket"];
+      const list = [];
+      for (let i = 0; i < config.itemCount; i++) {
+        const type = types[i % types.length];
+        list.push({
+          type,
+          x: 58 + Math.random() * 420,
+          y: 520 + i * (config.length / (config.itemCount + 2)) + Math.random() * 130,
+          w: 38,
+          h: 38,
+          taken: false
+        });
+      }
+      if (level >= 2 && Math.random() < 0.45) {
+        list.push({ type: "goldCatcan", x: 90 + Math.random() * 360, y: config.length * 0.55, w: 40, h: 40, taken: false });
+      }
+      return list;
+    }
+
+    function createObstacles(config) {
+      const amount = Math.ceil(config.obstacleCount * DIFFICULTY[difficulty].obstacle);
+      const list = [];
+      for (let i = 0; i < amount; i++) {
+        const type = config.obstacles[i % config.obstacles.length];
+        list.push(makeObstacle(type, 380 + i * (config.length / amount) + Math.random() * 160));
+      }
+      return list;
+    }
+
+    function makeObstacle(type, y) {
+      const dir = Math.random() < 0.5 ? 1 : -1;
+      const specs = {
+        bicycle: { w: 68, h: 46, speed: 105 },
+        scooter: { w: 76, h: 48, speed: 170 },
+        shopper: { w: 44, h: 58, speed: 58 },
+        clerk: { w: 78, h: 58, speed: 28 },
+        cart: { w: 104, h: 58, speed: 68 },
+        ramuneObstacle: { w: 32, h: 28, speed: 155 },
+        cat: { w: 48, h: 36, speed: 72 }
+      }[type];
+      const fastBike = type === "bicycle" && level >= 3 && Math.random() < 0.35;
+      return {
+        id: cryptoId(),
+        type,
+        x: dir > 0 ? -specs.w - Math.random() * 260 : 540 + Math.random() * 260,
+        y,
+        w: specs.w,
+        h: specs.h,
+        dir,
+        speed: specs.speed * DIFFICULTY[difficulty].speed * (fastBike ? 1.45 : 0.85 + Math.random() * 0.35),
+        phase: Math.random() * Math.PI * 2,
+        nearScored: false,
+        warned: false
+      };
+    }
+
+    function cryptoId() {
+      return Math.random().toString(36).slice(2) + Date.now().toString(36);
+    }
+
+    function loop(now) {
+      if (!running) return;
+      if (paused) {
+        lastTime = now;
+        animationId = requestAnimationFrame(loop);
+        return;
+      }
+      const dt = Math.min(0.033, (now - lastTime) / 1000);
+      lastTime = now;
+      update(dt, now);
+      draw(now);
+      animationId = requestAnimationFrame(loop);
+    }
+
+    function update(dt, now) {
+      const config = LEVELS[level - 1];
+      remainingTime = Math.max(0, Math.ceil((endAt - now) / 1000));
+      if (remainingTime <= 8 && !warnedLowTime) {
+        warnedLowTime = true;
+        playSound("warn");
+      }
+      if (remainingTime <= 0) {
+        loseLife("時間切れ！", true);
+        return;
+      }
+
+      const nearGoal = allProductsDone() || remainingTime <= 10 || scrollY > config.length - 850;
+      const scrollRelief = nearGoal ? 0.78 : 1;
+      scrollY += config.scroll * DIFFICULTY[difficulty].speed * scrollRelief * dt;
+      movePlayer(dt, now);
+      updateObstacles(dt, now);
+      updatePopups(dt);
+      checkProducts();
+      checkItems();
+      checkObstacles(now);
+      checkGoal();
+      if (player.y > 742) loseLife("押し出された！", false);
+      updateHud();
+    }
+
+    function movePlayer(dt, now) {
+      if (now < stoppedUntil) return;
+      let dx = 0;
+      let dy = 0;
+      if (keys.left) dx--;
+      if (keys.right) dx++;
+      if (keys.up) dy--;
+      if (keys.down) dy++;
+      const length = Math.hypot(dx, dy) || 1;
+      const loadRate = now < lightBagUntil ? 1 : Math.max(0.8, 1 - player.collected * 0.05);
+      const boost = now < speedBoostUntil ? 1.28 : 1;
+      const speed = player.speed * loadRate * boost;
+      player.x += (dx / length) * speed * dt;
+      player.y += (dy / length) * speed * dt;
+      player.y += LEVELS[level - 1].scroll * 0.42 * DIFFICULTY[difficulty].speed * dt;
+      player.x = Math.max(8, Math.min(540 - player.w - 8, player.x));
+      player.y = Math.max(58, Math.min(760, player.y));
+    }
+
+    function updateObstacles(dt, now) {
+      const config = LEVELS[level - 1];
+      obstacles.forEach((ob) => {
+        if (["bicycle", "scooter", "cart"].includes(ob.type) && !ob.warned && worldToScreenY(ob.y) < 760 && worldToScreenY(ob.y) > 650) {
+          ob.warned = true;
+          playSound("bell");
+        }
+        if (ob.type === "shopper") {
+          const pause = Math.sin(now / 900 + ob.phase) > 0.72 ? 0.2 : 1;
+          ob.x += ob.dir * ob.speed * pause * dt;
+          ob.y += Math.sin(now / 600 + ob.phase) * 10 * dt;
+        } else if (ob.type === "clerk") {
+          ob.x += Math.sin(now / 1100 + ob.phase) * 22 * dt;
+        } else if (ob.type === "ramuneObstacle") {
+          ob.x += ob.dir * ob.speed * dt;
+          ob.y += Math.sin(now / 260 + ob.phase) * 36 * dt;
+        } else {
+          ob.x += ob.dir * ob.speed * dt;
+        }
+        if (ob.dir > 0 && ob.x > 620) ob.x = -ob.w - Math.random() * 220;
+        if (ob.dir < 0 && ob.x + ob.w < -80) ob.x = 540 + Math.random() * 220;
+        const sy = worldToScreenY(ob.y);
+        if (allProductsDone() && sy < GOAL_RECT.y + GOAL_RECT.h + 72) {
+          Object.assign(ob, makeObstacle(ob.type, scrollY + 820 + Math.random() * 360));
+          return;
+        }
+        if (sy > 780) {
+          Object.assign(ob, makeObstacle(ob.type, scrollY + 760 + Math.random() * 420));
+        }
+        if (ob.y > config.length + 500) ob.y = scrollY + 760 + Math.random() * 340;
+      });
+    }
+
+    function updatePopups(dt) {
+      popups.forEach((popup) => {
+        popup.y -= 42 * dt;
+        popup.life -= dt;
+      });
+      popups = popups.filter((popup) => popup.life > 0);
+    }
+
+    function checkProducts() {
+      products.forEach((item) => {
+        if (item.taken) return;
+        const rect = screenRect(item);
+        if (rectHit(playerHitbox(), rect)) {
+          item.taken = true;
+          player.collected++;
+          addScore(100);
+          addPopup(rect.x + 20, rect.y, `+${scoreValue(100)}`);
+          showNotice(`${PRODUCT_LABELS[item.type]}を買った！`);
+          playSound("item");
+          if (allProductsDone() && !goalReadyNoticeShown) {
+            goalReadyNoticeShown = true;
+            showNotice("買い物完了！ ゴールへ向かおう");
+            addPopup(player.x + player.w / 2, player.y - 8, "ゴールへ！");
+          }
+        }
+        if (!item.taken && rect.y > 780) {
+          item.y = scrollY + 760 + Math.random() * 260;
+          item.x = 55 + Math.random() * 420;
+        }
+      });
+    }
+
+    function checkItems() {
+      items.forEach((item) => {
+        if (item.taken) return;
+        const rect = screenRect(item);
+        if (!rectHit(playerHitbox(), rect)) return;
+        item.taken = true;
+        if (item.type === "charm") {
+          charm = 1;
+          showNotice("お守り獲得！");
+          addPopup(rect.x, rect.y, "お守り！");
+          playSound("item");
+        } else if (item.type === "lightBag") {
+          lightBagUntil = performance.now() + 10000;
+          showNotice("買い物袋が軽い！");
+          addPopup(rect.x, rect.y, "軽い袋");
+          playSound("item");
+        } else if (item.type === "clock") {
+          endAt += 5000;
+          showNotice("時間＋5秒");
+          addPopup(rect.x, rect.y, "時間＋5秒");
+          playSound("item");
+        } else if (item.type === "ticket") {
+          const roll = Math.random();
+          if (roll < 0.35) {
+            addScore(100);
+            addPopup(rect.x, rect.y, "+100");
+          } else if (roll < 0.58) {
+            addScore(300);
+            addPopup(rect.x, rect.y, "+300");
+          } else if (roll < 0.82) {
+            speedBoostUntil = performance.now() + 5000;
+            addPopup(rect.x, rect.y, "速度アップ");
+          } else {
+            addPopup(rect.x, rect.y, "ハズレ");
+          }
+          showNotice("福引券！");
+          playSound("item");
+        } else if (item.type === "goldCatcan") {
+          addScore(500);
+          showNotice("金の猫缶！");
+          addPopup(rect.x, rect.y, "+500");
+          playSound("item");
+        }
+      });
+    }
+
+    function checkObstacles(now) {
+      const hitbox = playerHitbox();
+      obstacles.forEach((ob) => {
+        const rect = obstacleScreenRect(ob);
+        if (rect.y > 760 || rect.y + rect.h < -40) return;
+        if (rectHit(hitbox, rect)) {
+          if (ob.type === "cat") {
+            stoppedUntil = now + 1000;
+            showNotice("猫が動くまで待っています");
+            addPopup(player.x, player.y, "ねこ待ち");
+            if (Math.random() < 0.18) {
+              addScore(100);
+              addPopup(player.x + 30, player.y - 8, "+100");
+            }
+            playSound("cat");
+            ob.x += ob.dir * 90;
+            return;
+          }
+          if (now < invincibleUntil) return;
+          if (charm > 0) {
+            charm = 0;
+            invincibleUntil = now + 1200;
+            showNotice("お守りが守ってくれた！");
+            addPopup(player.x, player.y, "お守り！");
+            playSound("item");
+            return;
+          }
+          loseLife("ぶつかった！", false);
+        } else {
+          const dist = rectDistance(hitbox, rect);
+          if (!ob.nearScored && dist < 18 && rect.y + rect.h > player.y && rect.y < player.y + player.h) {
+            ob.nearScored = true;
+            nearMissStreak++;
+            maxNearMissStreak = Math.max(maxNearMissStreak, nearMissStreak);
+            totalNearMiss++;
+            const raw = nearMissStreak >= 3 ? 200 : nearMissStreak === 2 ? 100 : 50;
+            addScore(raw);
+            addPopup(player.x + 24, player.y - 8, `ギリギリ！ +${scoreValue(raw)}`);
+            playSound("near");
+          }
+        }
+      });
+    }
+
+    function checkGoal() {
+      if (!isPlayerInGoal()) return;
+      if (!allProductsDone()) {
+        showNotice("まだ買い忘れがあります！");
+        return;
+      }
+      clearLevel();
+    }
+
+    function allProductsDone() {
+      return products.every((item) => item.taken);
+    }
+
+    function isPlayerInGoal() {
+      if (!player) return false;
+      const playerCenterX = player.x + player.w / 2;
+      const playerCenterY = player.y + player.h / 2;
+      return (
+        playerCenterX >= GOAL_RECT.x &&
+        playerCenterX <= GOAL_RECT.x + GOAL_RECT.w &&
+        playerCenterY >= GOAL_RECT.y &&
+        playerCenterY <= GOAL_RECT.y + GOAL_RECT.h
+      );
+    }
+
+    function loseLife(message, resetStage) {
+      missesThisLevel++;
+      lives--;
+      nearMissStreak = 0;
+      showNotice(message);
+      playSound("hit");
+      if (lives <= 0) {
+        finishGame(false);
+        return;
+      }
+      if (resetStage) {
+        startLevel();
+        return;
+      }
+      player.y = Math.min(650, player.y + 90);
+      player.x = Math.max(20, Math.min(480, player.x - 30 + Math.random() * 60));
+      invincibleUntil = performance.now() + 1500;
+      updateHud();
+    }
+
+    function clearLevel() {
+      running = false;
+      const timeBonus = remainingTime * 20;
+      const noMissBonus = missesThisLevel === 0 ? 500 : 0;
+      addScore(1000 + timeBonus + noMissBonus);
+      playSound("clear");
+      if (level >= 3) {
+        addScore(3000);
+        setTimeout(() => finishGame(true), 800);
+        return;
+      }
+      panelTitle.textContent = "おつかい成功！";
+      panelBody.innerHTML = `<div class="panel-stats"><span>面クリア +${scoreValue(1000)}</span><span>時間 ${scoreValue(timeBonus)}点</span><span>ニアミス ${totalNearMiss}回</span><span>${noMissBonus ? "ノーミス +500" : "次の面へ"}</span></div>`;
+      panelStartBtn.textContent = "次の面へ";
+      panelAction = "next";
+      townLink.hidden = true;
+      overlay.classList.remove("hidden");
+    }
+
+    function finishGame(cleared) {
+      running = false;
+      gameEnded = true;
+      cancelAnimationFrame(animationId);
+      const isRecord = score > highScore;
+      if (isRecord) {
+        highScore = score;
+        saveHighScore(highScore);
+      }
+      highScoreEl.textContent = highScore;
+      playSound(cleared ? "allclear" : "over");
+      panelTitle.textContent = cleared ? "夕焼け横丁のおつかい完了！" : "買い物袋を抱えたまま力尽きました";
+      panelBody.innerHTML = cleared
+        ? `${isRecord ? '<p class="record">新記録！</p>' : ""}<div class="panel-stats"><span>最終得点 ${score}</span><span>最高 ${highScore}</span><span>最大ニアミス ${maxNearMissStreak}</span><span>残機 ${lives}</span></div>`
+        : `<div class="panel-stats"><span>今回 ${score}点</span><span>到達 ${level}面</span><span>集めた品 ${player ? player.collected : 0}</span><span>最高 ${highScore}</span></div>`;
+      panelStartBtn.textContent = "もう一度遊ぶ";
+      panelAction = "start";
+      townLink.hidden = false;
+      overlay.classList.remove("hidden");
+    }
+
+    function handlePanelAction() {
+      if (panelAction === "next") {
+        level++;
+        overlay.classList.add("hidden");
+        startLevel();
+        return;
+      }
+      startGame();
+    }
+
+    function togglePause(forcePause) {
+      if (!running || gameEnded) return;
+      const next = typeof forcePause === "boolean" ? forcePause : !paused;
+      if (next === paused) return;
+      paused = next;
+      pauseBtn.textContent = paused ? "再開" : "一時停止";
+      showNotice(paused ? "一時停止中" : "再開！");
+      if (!paused) {
+        endAt = performance.now() + remainingTime * 1000;
+        lastTime = performance.now();
+      }
+    }
+
+    function addScore(raw) {
+      score += scoreValue(raw);
+    }
+
+    function scoreValue(raw) {
+      return Math.round(raw * DIFFICULTY[difficulty].score);
+    }
+
+    function worldToScreenY(y) {
+      return 650 - (y - scrollY);
+    }
+
+    function screenRect(obj) {
+      return { x: obj.x, y: worldToScreenY(obj.y), w: obj.w, h: obj.h, type: obj.type };
+    }
+
+    function obstacleScreenRect(ob) {
+      const rect = screenRect(ob);
+      return { x: rect.x + rect.w * 0.12, y: rect.y + rect.h * 0.16, w: rect.w * 0.76, h: rect.h * 0.68, type: ob.type };
+    }
+
+    function playerHitbox() {
+      return { x: player.x + 9, y: player.y + 9, w: player.w - 18, h: player.h - 16 };
+    }
+
+    function rectHit(a, b) {
+      return a.x < b.x + b.w && a.x + a.w > b.x && a.y < b.y + b.h && a.y + a.h > b.y;
+    }
+
+    function rectDistance(a, b) {
+      const dx = Math.max(b.x - (a.x + a.w), a.x - (b.x + b.w), 0);
+      const dy = Math.max(b.y - (a.y + a.h), a.y - (b.y + b.h), 0);
+      return Math.hypot(dx, dy);
+    }
+
+    function addPopup(x, y, text) {
+      popups.push({ x, y, text, life: 1 });
+    }
+
+    function updateHud() {
+      const config = LEVELS[level - 1] || LEVELS[0];
+      scoreEl.textContent = score;
+      highScoreEl.textContent = Math.max(highScore, score);
+      livesEl.textContent = lives;
+      levelEl.textContent = `${level}`;
+      timeEl.textContent = `${remainingTime}秒`;
+      bagStateEl.textContent = bagLabel();
+      memoListEl.innerHTML = config.products.map((type) => {
+        const item = products.find((product) => product.type === type);
+        const done = item && item.taken;
+        return `<span class="${done ? "done" : ""}">${done ? "☑" : "☐"} ${PRODUCT_LABELS[type]}</span>`;
+      }).join("");
+    }
+
+    function bagLabel() {
+      if (!player) return "軽い";
+      if (player.collected === 0) return "軽い";
+      if (player.collected === 1) return "ちょっと重い";
+      if (player.collected <= 3) return "重い";
+      return "かなり重い";
+    }
+
+    function showNotice(message) {
+      noticeEl.textContent = message;
+      noticeEl.classList.add("show");
+      clearTimeout(showNotice.timer);
+      showNotice.timer = setTimeout(() => noticeEl.classList.remove("show"), 1200);
+    }
+
+    function draw(now = performance.now()) {
+      ctx.clearRect(0, 0, 540, 720);
+      drawStreet();
+      products.forEach((item) => !item.taken && drawWorldAsset(item.type, screenRect(item), now, true));
+      items.forEach((item) => !item.taken && drawWorldAsset(item.type, screenRect(item), now, true));
+      obstacles.forEach((ob) => drawObstacle(ob, now));
+      drawGoal(now);
+      if (player) drawPlayer(now);
+      popups.forEach(drawPopup);
+      if (paused) drawPaused();
+    }
+
+    function drawStreet() {
+      const config = LEVELS[level - 1] || LEVELS[0];
+      const night = level === 3;
+      ctx.fillStyle = night ? "#2a243e" : "#c96d3c";
+      ctx.fillRect(0, 0, 540, 720);
+      const offset = scrollY % 120;
+      for (let y = -120 + offset; y < 800; y += 120) {
+        ctx.fillStyle = night ? "#3a2d4d" : "#de8c4b";
+        ctx.fillRect(0, y, 540, 58);
+        ctx.fillStyle = "rgba(255,244,196,0.22)";
+        for (let x = 0; x < 540; x += 90) ctx.fillRect(x + 8, y + 8, 54, 3);
+      }
+      ctx.fillStyle = night ? "#ffcb55" : "#fff0a8";
+      ctx.fillRect(0, 0, 540, 58);
+      ctx.fillStyle = "#572414";
+      ctx.font = "bold 23px sans-serif";
+      ctx.textAlign = "center";
+      ctx.fillText(config.goal, 270, 37);
+      ctx.fillStyle = "rgba(65,31,18,0.35)";
+      ctx.fillRect(0, 58, 22, 662);
+      ctx.fillRect(518, 58, 22, 662);
+    }
+
+    function drawGoal(now = performance.now()) {
+      const config = LEVELS[level - 1] || LEVELS[0];
+      const ready = allProductsDone();
+      const pulse = ready ? 0.65 + Math.sin(now / 170) * 0.18 : 0;
+      ctx.save();
+      if (ready) {
+        ctx.shadowColor = "#fff36d";
+        ctx.shadowBlur = 12 + pulse * 18;
+      }
+      ctx.fillStyle = ready ? `rgba(255,244,156,${0.9 + pulse * 0.08})` : "rgba(255,240,168,0.9)";
+      ctx.fillRect(GOAL_RECT.x, GOAL_RECT.y, GOAL_RECT.w, GOAL_RECT.h);
+      ctx.strokeStyle = ready ? "#fff36d" : "#8b421f";
+      ctx.lineWidth = ready ? 5 : 4;
+      ctx.strokeRect(GOAL_RECT.x, GOAL_RECT.y, GOAL_RECT.w, GOAL_RECT.h);
+      ctx.fillStyle = "#5a2517";
+      ctx.font = "bold 24px sans-serif";
+      ctx.textAlign = "center";
+      ctx.fillText(ready ? "買い物完了！ ここへ届けよう" : "買い忘れ確認所", 270, GOAL_RECT.y + 37);
+      ctx.font = "bold 15px sans-serif";
+      ctx.fillText(config.goal, 270, GOAL_RECT.y + 63);
+      ctx.restore();
+    }
+
+    function drawWorldAsset(type, rect, now, floaty) {
+      if (rect.y < -90 || rect.y > 780) return;
+      const key = assetKey(type);
+      const bob = floaty ? Math.sin(now / 360 + rect.x) * 4 : 0;
+      drawAsset(key, rect.x, rect.y + bob, rect.w, rect.h, 0, fallbackLabel(type));
+      if (type === "goldCatcan") {
+        ctx.strokeStyle = "#ffe45c";
+        ctx.lineWidth = 3;
+        ctx.strokeRect(rect.x - 4, rect.y - 4 + bob, rect.w + 8, rect.h + 8);
+      }
+    }
+
+    function drawObstacle(ob, now) {
+      const sy = worldToScreenY(ob.y);
+      if (sy < -90 || sy > 780) return;
+      const tilt = ["bicycle", "scooter"].includes(ob.type) ? ob.dir * 0.08 : 0;
+      const bob = ob.type === "cart" ? Math.sin(now / 160 + ob.phase) * 2 : ob.type === "shopper" ? Math.sin(now / 220 + ob.phase) * 4 : 0;
+      const rotation = ob.type === "ramuneObstacle" ? now / 180 * ob.dir : tilt;
+      drawAsset(assetKey(ob.type), ob.x, sy + bob, ob.w, ob.h, rotation, fallbackLabel(ob.type), ob.dir < 0);
+    }
+
+    function drawPlayer(now) {
+      const blink = now < invincibleUntil && Math.floor(now / 120) % 2 === 0;
+      if (blink) ctx.globalAlpha = 0.45;
+      if (charm > 0) {
+        ctx.strokeStyle = "#fff176";
+        ctx.lineWidth = 4;
+        ctx.beginPath();
+        ctx.ellipse(player.x + player.w / 2, player.y + player.h / 2, 30, 36, 0, 0, Math.PI * 2);
+        ctx.stroke();
+      }
+      const bob = (keys.up || keys.down || keys.left || keys.right) ? Math.sin(now / 110) * 3 : 0;
+      drawAsset("player", player.x, player.y + bob, player.w, player.h, 0, "人");
+      ctx.globalAlpha = 1;
+    }
+
+    function drawAsset(key, x, y, w, h, rotation, label, flip = false) {
+      const img = assetImages[key];
+      ctx.save();
+      ctx.translate(x + w / 2, y + h / 2);
+      ctx.rotate(rotation || 0);
+      if (flip) ctx.scale(-1, 1);
+      if (img && !failedAssets.has(key)) {
+        ctx.drawImage(img, -w / 2, -h / 2, w, h);
+      } else {
+        ctx.fillStyle = "#ffe082";
+        ctx.strokeStyle = "#5a2517";
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.roundRect(-w / 2, -h / 2, w, h, 8);
+        ctx.fill();
+        ctx.stroke();
+        ctx.fillStyle = "#5a2517";
+        ctx.font = "bold 16px sans-serif";
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.fillText(label, 0, 0);
+      }
+      ctx.restore();
+    }
+
+    function drawPopup(popup) {
+      ctx.globalAlpha = Math.max(0, popup.life);
+      ctx.fillStyle = "#fff4a6";
+      ctx.font = "bold 21px sans-serif";
+      ctx.textAlign = "center";
+      ctx.strokeStyle = "#542414";
+      ctx.lineWidth = 4;
+      ctx.strokeText(popup.text, popup.x, popup.y);
+      ctx.fillText(popup.text, popup.x, popup.y);
+      ctx.globalAlpha = 1;
+    }
+
+    function drawPaused() {
+      ctx.fillStyle = "rgba(20,10,7,0.68)";
+      ctx.fillRect(0, 0, 540, 720);
+      ctx.fillStyle = "#fff0a8";
+      ctx.font = "bold 38px sans-serif";
+      ctx.textAlign = "center";
+      ctx.fillText("一時停止中", 270, 360);
+    }
+
+    function assetKey(type) {
+      return {
+        bicycle: "bicycle",
+        scooter: "scooter",
+        shopper: "shopper",
+        clerk: "clerk",
+        cart: "cart",
+        cat: "cat",
+        ramuneObstacle: "ramuneObstacle",
+        ramune: "ramune",
+        bread: "bread",
+        catcan: "catcan",
+        milk: "milk",
+        senbei: "senbei",
+        croquette: "croquette",
+        goldCatcan: "goldCatcan",
+        charm: "charm",
+        lightBag: "lightBag",
+        clock: "clock",
+        ticket: "ticket"
+      }[type] || type;
+    }
+
+    function fallbackLabel(type) {
+      return PRODUCT_LABELS[type] || { bicycle: "自転車", scooter: "バイク", shopper: "客", clerk: "店員", cart: "台車", cat: "猫", ramuneObstacle: "瓶", charm: "守", lightBag: "袋", clock: "時計", ticket: "券" }[type] || "?";
+    }
+
+    function setDirection(direction, active) {
+      keys[direction] = active;
+    }
+
+    document.querySelectorAll(".pad-button").forEach((button) => {
+      const dir = button.dataset.dir;
+      button.addEventListener("pointerdown", (event) => {
+        event.preventDefault();
+        setDirection(dir, true);
+      });
+      ["pointerup", "pointerleave", "pointercancel"].forEach((name) => {
+        button.addEventListener(name, () => setDirection(dir, false));
+      });
+    });
+
+    document.addEventListener("keydown", (event) => {
+      if (event.key === "ArrowUp") keys.up = true;
+      if (event.key === "ArrowDown") keys.down = true;
+      if (event.key === "ArrowLeft") keys.left = true;
+      if (event.key === "ArrowRight") keys.right = true;
+      if (event.key === "Enter") startGame();
+      if (event.key.toLowerCase() === "p") togglePause();
+      if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", " "].includes(event.key)) event.preventDefault();
+    });
+
+    document.addEventListener("keyup", (event) => {
+      if (event.key === "ArrowUp") keys.up = false;
+      if (event.key === "ArrowDown") keys.down = false;
+      if (event.key === "ArrowLeft") keys.left = false;
+      if (event.key === "ArrowRight") keys.right = false;
+    });
+
+    document.addEventListener("touchmove", (event) => {
+      if (event.target.closest(".stage-wrap") || event.target.closest(".dpad")) event.preventDefault();
+    }, { passive: false });
+
+    document.addEventListener("visibilitychange", () => {
+      if (document.hidden) togglePause(true);
+    });
+
+    startBtn.addEventListener("pointerdown", initAudio);
+    panelStartBtn.addEventListener("pointerdown", initAudio);
+    startBtn.addEventListener("click", startGame);
+    panelStartBtn.addEventListener("click", handlePanelAction);
+    pauseBtn.addEventListener("click", () => togglePause());
+    soundBtn.addEventListener("pointerdown", initAudio);
+    soundBtn.addEventListener("click", () => {
+      soundEnabled = !soundEnabled;
+      soundBtn.textContent = soundEnabled ? "音 ON" : "音 OFF";
+      if (soundEnabled) initAudio();
+    });
+
+    window.addEventListener("resize", resizeCanvas);
+
+    if (!CanvasRenderingContext2D.prototype.roundRect) {
+      CanvasRenderingContext2D.prototype.roundRect = function (x, y, w, h, r) {
+        this.beginPath();
+        this.moveTo(x + r, y);
+        this.lineTo(x + w - r, y);
+        this.quadraticCurveTo(x + w, y, x + w, y + r);
+        this.lineTo(x + w, y + h - r);
+        this.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+        this.lineTo(x + r, y + h);
+        this.quadraticCurveTo(x, y + h, x, y + h - r);
+        this.lineTo(x, y + r);
+        this.quadraticCurveTo(x, y, x + r, y);
+        return this;
+      };
+    }
+
+    resizeCanvas();
+    updateHud();
+    highScoreEl.textContent = highScore;
+    preloadAssets();
+  </script>
+</body>
+</html>
