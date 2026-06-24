@@ -1,6 +1,16 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-K0KRRH8DCW"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+
+    gtag('config', 'G-K0KRRH8DCW');
+  </script>
+
   <meta charset="UTF-8">
   <title>リバーシゲーム</title>
   <link rel="icon" type="image/svg+xml" href="../images/favicon.svg">
@@ -199,6 +209,24 @@
   <div id="board"></div>
 
   <script>
+    const GA_GAME_NAME = "??????";
+
+    function trackGaGameStart() {
+      if (typeof gtag === "function") {
+        gtag("event", "game_start", {
+          game_name: GA_GAME_NAME
+        });
+      }
+    }
+
+    function trackGaGameEnd(result, finalScore) {
+      if (typeof gtag === "function") {
+        const params = { game_name: GA_GAME_NAME, result };
+        if (typeof finalScore === "number") params.score = finalScore;
+        gtag("event", "game_end", params);
+      }
+    }
+
     const EMPTY = 0;
     const BLACK = 1;
     const WHITE = 2;
@@ -304,6 +332,7 @@
     }
 
     function startGame() {
+      trackGaGameStart();
       gameMode = document.getElementById("modeSelect").value;
       cpuLevel = document.getElementById("levelSelect").value;
       guideMode = document.getElementById("guideSelect").value;
@@ -719,6 +748,7 @@
         resultText += "引き分け！";
       }
 
+      trackGaGameEnd("clear", Math.max(counts.black, counts.white));
       document.getElementById("info").textContent = resultText;
       document.getElementById("score").textContent =
         "黒: " + counts.black + "　白: " + counts.white;

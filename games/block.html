@@ -1,6 +1,16 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-K0KRRH8DCW"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+
+    gtag('config', 'G-K0KRRH8DCW');
+  </script>
+
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
   <title>昭和レトロ ブロック崩し</title>
@@ -191,6 +201,24 @@
   </div>
 
   <script>
+    const GA_GAME_NAME = "?????????";
+
+    function trackGaGameStart() {
+      if (typeof gtag === "function") {
+        gtag("event", "game_start", {
+          game_name: GA_GAME_NAME
+        });
+      }
+    }
+
+    function trackGaGameEnd(result, finalScore) {
+      if (typeof gtag === "function") {
+        const params = { game_name: GA_GAME_NAME, result };
+        if (typeof finalScore === "number") params.score = finalScore;
+        gtag("event", "game_end", params);
+      }
+    }
+
     const canvas = document.getElementById("game");
     const ctx = canvas.getContext("2d");
 
@@ -293,6 +321,7 @@
 
     function startGame() {
       if (running) return;
+      trackGaGameStart();
 
       if (lives <= 0) {
         score = 0;
@@ -309,6 +338,7 @@
     }
 
     function nextLevel() {
+      trackGaGameEnd("clear", score);
       running = false;
       level++;
       makeBricks();
@@ -322,6 +352,7 @@
     }
 
     function gameOver() {
+      trackGaGameEnd("gameover", score);
       running = false;
       showPanel(
         "ゲームオーバー",

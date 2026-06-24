@@ -1,6 +1,16 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-K0KRRH8DCW"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+
+    gtag('config', 'G-K0KRRH8DCW');
+  </script>
+
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
   <title>猫缶仕分けパズル</title>
@@ -414,6 +424,24 @@
   </nav>
 
   <script>
+    const GA_GAME_NAME = "????????";
+
+    function trackGaGameStart() {
+      if (typeof gtag === "function") {
+        gtag("event", "game_start", {
+          game_name: GA_GAME_NAME
+        });
+      }
+    }
+
+    function trackGaGameEnd(result, finalScore) {
+      if (typeof gtag === "function") {
+        const params = { game_name: GA_GAME_NAME, result };
+        if (typeof finalScore === "number") params.score = finalScore;
+        gtag("event", "game_end", params);
+      }
+    }
+
     const canvas = document.getElementById("game");
     const ctx = canvas.getContext("2d");
     const scoreEl = document.getElementById("score");
@@ -556,6 +584,7 @@
     }
 
     function startGame() {
+      trackGaGameStart();
       matchCount = Number(matchCountSelect.value);
       updateRuleDisplay();
       matchCountSelect.disabled = true;
@@ -601,6 +630,7 @@
       current = null;
       matchCountSelect.disabled = false;
       setStatus("閉店");
+      trackGaGameEnd("gameover", score);
       startBtn.textContent = "もう一度遊ぶ";
       showMessage("ゲームオーバー", `スコア ${score} 点<br>棚がいっぱいになりました。<br>もう一度遊ぶを押すと再開します。`);
       draw();

@@ -11,3 +11,14 @@ document.querySelectorAll(".game-card.locked").forEach((card) => {
     );
   });
 });
+
+document.querySelectorAll(".game-card.playable").forEach((card) => {
+  card.addEventListener("click", () => {
+    if (typeof gtag === "function") {
+      const title = card.querySelector("h2");
+      gtag("event", "game_card_click", {
+        game_name: title ? title.textContent.trim() : "unknown"
+      });
+    }
+  });
+});

@@ -1,6 +1,16 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-K0KRRH8DCW"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+
+    gtag('config', 'G-K0KRRH8DCW');
+  </script>
+
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
@@ -679,6 +689,24 @@
   </main>
 
   <script>
+    const GA_GAME_NAME = "?????????";
+
+    function trackGaGameStart() {
+      if (typeof gtag === "function") {
+        gtag("event", "game_start", {
+          game_name: GA_GAME_NAME
+        });
+      }
+    }
+
+    function trackGaGameEnd(result, finalScore) {
+      if (typeof gtag === "function") {
+        const params = { game_name: GA_GAME_NAME, result };
+        if (typeof finalScore === "number") params.score = finalScore;
+        gtag("event", "game_end", params);
+      }
+    }
+
     if (!Promise.allSettled) {
       Promise.allSettled = function (promises) {
         return Promise.all(Array.from(promises).map((promise) =>
@@ -968,6 +996,7 @@
     }
 
     async function startGame() {
+      trackGaGameStart();
       initAudio();
       await preloadTargetImages();
       cancelAnimationFrame(animationId);
@@ -1001,6 +1030,7 @@
       document.body.classList.remove("game-running");
       cancelAnimationFrame(animationId);
       clearAllTargets();
+      trackGaGameEnd("timeup", score);
       playSound("end");
 
       const isNewRecord = score > highScore;
